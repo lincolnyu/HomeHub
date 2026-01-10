@@ -1,0 +1,114 @@
+@page
+@model ArithmenticModel
+@{
+    ViewData["Title"] = "Multiplication Trainer";
+    Layout = null;
+    <!-- full control, no _Layout needed -->
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <style>
+        body {
+            font-family: Consolas, monospace;
+            background: #000;
+            color: #0f0;
+            padding: 2rem;
+        }
+
+        input[type=text] {
+            font-family: Consolas, monospace;
+            font-size: 2rem;
+            width: 200px;
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            text-align: center;
+        }
+
+        input[type=submit] {
+            display: none;
+        }
+        <!--
+
+        we submit on Enter -->
+        .log {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    @if (!Model.GameStarted)
+    {
+        <h1>Multiplication Trainer</h1>
+        <p>
+            Quiz of multiplying @Model.DigitsOperand1-digit and @Model.DigitsOperand2-digit numbers.<br />
+            Required speed: @Model.MinAnswersPerMinRequired answers/min<br />
+            Required consecutive correct answers: @Model.ConsecutiveSuccessesRequired<br />
+            Non-repeat queue length: @Model.NonRepeatQueueLength<br />
+            Reinforcement repeat cap: @Model.ReinforceRepeatCap<br />
+        </p>
+        <form method="post">
+            <button type="submit" asp-page-handler="Start" style="font-size:1.5rem;padding:1rem;">Press any key when ready (Start)</button>
+        </form>
+    }
+    else if (Model.IsFinished)
+    {
+        <h1>Congratulations! You have completed the session!</h1>
+        <p>You succeeded @Model.ConsecutiveSuccess times in a row above the required @Model.MinAnswersPerMinRequired A/min.</p>
+        @if (Model.MaxPerf.HasValue)
+        {
+            <p>Best performance: @Model.MaxPerfReport% on @Model.MaxPerfQuestion</p>
+            <p>Worst performance: @Model.MinPerfReport% on @Model.MinPerfQuestion</p>
+        }
+        @if (!string.IsNullOrEmpty(Model.LogFilePath))
+        {
+            <p><a href="/Arithmentic/DownloadLog" target="_blank">Download log file</a></p>
+        }
+        <p><a href="/Arithmentic">Start again</a></p>
+    }
+    else
+    {
+        <h2>@Model.CurrentOperand1 × @Model.CurrentOperand2 = </h2>
+
+        <form method="post" asp-page-handler="Answer">
+            <input type="text" name="userAnswer" autofocus autocomplete="off" />
+            <input type="hidden" name="startTicks" value="@DateTime.Now.Ticks" />
+        </form>
+
+        @if (!string.IsNullOrEmpty(Model.LastMessage))
+        {
+            <div style="margin-top:2rem; font-size:1.3rem;">
+                @Html.Raw(Model.LastMessage.Replace("\n", "<br/>"))
+            </div>
+        }
+
+        @if (Model.LoggedAnswers.Any())
+        {
+            <div class="log">
+                <strong>Log:</strong><br />
+                @foreach (var a in Model.LoggedAnswers.TakeLast(10))
+                {
+                    <div>@a</div>
+                }
+            </div>
+        }
+    }
+
+    <script>
+        // Auto-focus the input and submit on Enter (exactly like console)
+        document.querySelector('input[type=text]')?.focus();
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && document.querySelector('input[type=text]')) {
+                document.querySelector('form')?.submit();
+            }
+        });
+    </script>
+</body>
+</html>
