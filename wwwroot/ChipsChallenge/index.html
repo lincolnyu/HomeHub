@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chip's Challenge 3D - True First-Person Movement</title>
+  <style>
+    body { margin:0; overflow:hidden; background:#000; font-family:sans-serif; }
+    #info { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 5px; pointer-events: none; z-index: 100; }
+    #inventory { position: absolute; bottom: 20px; left: 20px; color: white; font-size: 20px; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 5px; }
+    #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; color: #ff4444; background: rgba(0,0,0,0.8); padding: 30px 60px; border-radius: 15px; display: none; pointer-events: none; z-index: 200; }
+  </style>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+<div id="info">Click to play → WASD = move (camera-relative) | R = restart</div>
+<div id="inventory">Keys: <span id="keyCount">0</span></div>
+<div id="gameOver">GAME OVER</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+// ==================== GLOBALS ====================
+const TILE_SIZE = 2;
+const MOVE_DURATION = 0.25; // seconds per tile move
+const USE_EASING = false;
+
+let scene, camera, renderer, controls;
+let player;
+let playerX = 1, playerZ = 1;
+let keysCollected = 0;
+let isMoving = false;
+let moveStartTime = 0;
+let moveFrom = new THREE.Vector3();
+let moveTo = new THREE.Vector3();
+
+// For camera-relative movement
+const velocity = new THREE.Vector3(); // not really velocity, just direction flags
+const direction = new THREE.Vector3();
+
+// Enemy
+let enemy;
+let enemyX = 5, enemyZ = 2;
+let enemyMoveProgress = 0;
+let enemyIsMoving = false;
+
+// NEW: Enemy moves on its own clock!
+const ENEMY_MOVE_INTERVAL = 800;  // milliseconds (0.8s per move → slower than you)
+let lastEnemyMoveTime = 0;
+
+const ENEMY_GLOBAL_VISION = true;  // ← still your switch
+
+let ambientLight, directionalLight;
+
+// Level
+const level1 = [
+  [0,0,0,0,0,0,0,0,0],
+  [0,1,1,1,0,1,1,1,0],
+  [0,1,0,1,0,1,0,2,0],
+  [0,1,0,1,0,1,0,1,0],
+  [0,1,2,1,1,1,0,1,0],
+  [0,1,0,0,0,1,6,1,0],
+  [0,1,1,1,3,1,4,1,0],
+  [0,1,5,1,1,1,1,1,0],
+  [0,0,0,0,0,0,0,0,0]
+];
+let grid = level1.map(row => row.slice());
+
+// ==================== INIT ====================
+init();
+animate();
+
+function init() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x222233);
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  // Pointer lock controls
+  controls = new PointerLockControls(camera, document.body);
+  scene.add(controls.getObject());
+
+  // Start position
+  controls.getObject().position.set(playerX * TILE_SIZE, 2, playerZ * TILE_SIZE);
+
+  document.addEventListener('click', () => controls.lock());
+  controls.addEventListener('lock', () => document.getElementById('info').style.display = 'none');
+  controls.addEventListener('unlock', () => document.getElementById('info').style.display = 'block');
+
+  // Lights
+  ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambientLight);
+  directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  directionalLight.position.set(10, 20, 10);
+  scene.add(directionalLight);
+
+  // Invisible player collider
+  const playerGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.8, 16);
+  const playerMat = new THREE.MeshBasicMaterial({ visible: false });
+  player = new THREE.Mesh(playerGeo, playerMat);
+  player.position.copy(controls.getObject().position);
+  player.position.y = 0.9;
+  scene.add(player);
+
+  // Enemy
+  const enemyGeo = new THREE.SphereGeometry(0.45);
+  const enemyMat = new THREE.MeshStandardMaterial({ color: 0xff4444 });
+  enemy = new THREE.Mesh(enemyGeo, enemyMat);
+  enemy.position.set(enemyX * TILE_SIZE, 0.5, enemyZ * TILE_SIZE);
+  scene.add(enemy);
+
+  buildLevel();
+
+  // Input
+  document.addEventListener('keydown', onKeyDown);
+  document.addEventListener('keyup', onKeyUp);
+  window.addEventListener('resize', onWindowResize);
+}
+
+// ==================== ENEMY AI - NOW INDEPENDENT ====================
+function tryMoveEnemy() {
+  if (enemyIsMoving) return;
+
+  const dx = playerX - enemyX;
+  const dz = playerZ - enemyZ;
+
+  let canMove = false;
+  let tried = 0;
+  let selected = 0;
+
+  for(;tried < 2 && !canMove;++tried)
+  {
+    // TODO complete path finding...
+    let edx = 0, edz = 0;
+    if(tried == 1) {
+      if (selected == 0) {
+        edz = dz > 0 ? 1 : -1;
+      } else {
+        edx = dx > 0 ? 1 : -1;
+      }
+    } else {
+      if (Math.abs(dx) > Math.abs(dz)) {
+        edx = dx > 0 ? 1 : -1;
+        selected = 0;
+      } else if (Math.abs(dz) > 0) {
+        edz = dz > 0 ? 1 : -1;
+        selected = 1;
+      } else {
+        return; // already on player?
+      }
+    }
+
+    const enx = enemyX + edx;
+    const enz = enemyZ + edz;
+
+    canMove = enx >= 0 && enz >= 0 && enz < grid.length && enx < grid[0].length &&
+                  grid[enz][enx] !== 0 &&
+                  (grid[enz][enx] !== 3 || keysCollected > 0);         // TODO review the key thing...
+    if (canMove) {
+      enemyX = enx;
+      enemyZ = enz;
+
+      if (enemyX === playerX && enemyZ === playerZ) {
+        document.getElementById('gameOver').style.display = 'block';
+        controls.unlock();
+        return;
+      }
+
+      enemyMoveProgress = 0;
+      enemyIsMoving = true;
+    }
+  }
+}
+
+// ==================== INPUT ====================
+function onKeyDown(e) {
+  if (isMoving) return;
+  switch (e.code) {
+    case 'KeyW': velocity.z = -1; tryStartMove(); break;
+    case 'KeyS': velocity.z =  1; tryStartMove(); break;
+    case 'KeyA': velocity.x = -1; tryStartMove(); break;
+    case 'KeyD': velocity.x =  1; tryStartMove(); break;
+    case 'KeyR': resetLevel(); break;
+  }
+}
+
+function onKeyUp(e) {
+  switch (e.code) {
+    case 'KeyW':
+    case 'KeyS': velocity.z = 0; break;
+    case 'KeyA':
+    case 'KeyD': velocity.x = 0; break;
+  }
+}
+
+function tryStartMove() {
+  if (isMoving || (velocity.x === 0 && velocity.z === 0)) return;
+
+  // Get camera direction (ignoring pitch)
+  const forward = new THREE.Vector3();
+  controls.getDirection(forward);
+  forward.y = 0;
+  forward.normalize();
+
+  const right = new THREE.Vector3();
+  right.crossVectors(forward, new THREE.Vector3(0,1,0)).normalize();
+
+  // Combine input with camera direction
+  direction.set(0,0,0);
+  direction.addScaledVector(forward, -velocity.z); // W/S
+  direction.addScaledVector(right, velocity.x);    // A/D
+  direction.normalize();
+
+  // Round to nearest grid direction (N/E/S/W only)
+  const absX = Math.abs(direction.x);
+  const absZ = Math.abs(direction.z);
+
+  let dx = 0, dz = 0;
+  if (absX > absZ) {
+    dx = direction.x > 0 ? 1 : -1;
+  } else {
+    dz = direction.z > 0 ? 1 : -1;
+  }
+
+  // Try to move in that grid direction
+  const nx = playerX + dx;
+  const nz = playerZ + dz;
+
+  if (nx >= 0 && nz >= 0 && nz < grid.length && nx < grid[0].length &&
+      grid[nz][nx] !== 0 && (grid[nz][nx] !== 3 || keysCollected > 0 &&
+      !(nx === enemyX && nz === enemyZ))) {
+
+    // Valid move!
+    playerX = nx;
+    playerZ = nz;
+
+    // Handle tile effects
+    if (grid[nz][nx] === 2) { keysCollected++; grid[nz][nx] = 1; buildLevel(); }
+    if (grid[nz][nx] === 3 && keysCollected > 0) { keysCollected--; grid[nz][nx] = 1; buildLevel(); }
+    if (grid[nz][nx] === 4) { grid[nz][nx] = 1; buildLevel(); }
+    if (grid[nz][nx] === 5) { setTimeout(() => { alert('Level Complete!'); resetLevel(); }, 300); }
+
+    document.getElementById('keyCount').textContent = keysCollected;
+
+    // Start smooth movement
+    moveFrom.copy(controls.getObject().position);
+    moveTo.set(playerX * TILE_SIZE, 2, playerZ * TILE_SIZE);
+    moveStartTime = performance.now();
+    isMoving = true;
+  }
+
+  // Reset velocity after attempt
+  velocity.set(0,0,0);
+}
+
+// ==================== ANIMATION ====================
+function animate() {
+  requestAnimationFrame(animate);
+
+  const now = performance.now();
+
+  if (isMoving) {
+    const elapsed = (now - moveStartTime) / (MOVE_DURATION * 1000);
+    if (elapsed >= 1) {
+      controls.getObject().position.copy(moveTo);
+      player.position.set(playerX * TILE_SIZE, 0.9, playerZ * TILE_SIZE);
+      isMoving = false;
+    } else {
+      controls.getObject().position.lerpVectors(moveFrom, moveTo, USE_EASING? easeOutQuad(elapsed) : elapsed);
+      player.position.x = controls.getObject().position.x;
+      player.position.z = controls.getObject().position.z;
+    }
+  }
+
+  // ENEMY MOVES INDEPENDENTLY!
+  if (!enemyIsMoving && now - lastEnemyMoveTime > ENEMY_MOVE_INTERVAL) {
+    tryMoveEnemy();
+    lastEnemyMoveTime = now;
+  }
+
+  // Enemy animation
+  if (enemyIsMoving) {
+    enemyMoveProgress += 0.06;
+    const target = new THREE.Vector3(enemyX * TILE_SIZE, 0.5 + Math.sin(enemyMoveProgress * Math.PI) * 0.2, enemyZ * TILE_SIZE);
+    enemy.position.lerp(target, enemyMoveProgress);
+    if (enemyMoveProgress >= 1) {
+      enemyIsMoving = false;
+      enemyMoveProgress = 0;
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+
+function easeOutQuad(t) {
+  return t * (2 - t);
+}
+
+// ==================== LEVEL & UTILS ====================
+function buildLevel() {
+  const keep = [controls.getObject(), player, enemy, ambientLight, directionalLight];
+  for (let i = scene.children.length - 1; i >= 0; i--) {
+    if (!keep.includes(scene.children[i])) scene.remove(scene.children[i]);
+  }
+
+  const floorGeo = new THREE.BoxGeometry(TILE_SIZE, 0.3, TILE_SIZE);
+  const wallGeo = new THREE.BoxGeometry(TILE_SIZE, 3, TILE_SIZE);
+
+  const mat = {
+    floor: new THREE.MeshStandardMaterial({ color: 0x4488aa }),
+    wall:  new THREE.MeshStandardMaterial({ color: 0x666666 }),
+    key:   new THREE.MeshStandardMaterial({ color: 0xffff00 }),
+    door:  new THREE.MeshStandardMaterial({ color: 0xff00ff }),
+    chip:  new THREE.MeshStandardMaterial({ color: 0x00ff00 }),
+    socket:new THREE.MeshStandardMaterial({ color: 0x00ffaa })
+  };
+
+  for (let z = 0; z < grid.length; z++) {
+    for (let x = 0; x < grid[z].length; x++) {
+      const t = grid[z][x];
+      const px = x * TILE_SIZE;
+      const pz = z * TILE_SIZE;
+
+      if (t !== 0 && t !== 6) {
+        const floor = new THREE.Mesh(floorGeo, mat.floor);
+        floor.position.set(px, -0.15, pz);
+        scene.add(floor);
+      }
+      if (t === 0) {
+        const wall = new THREE.Mesh(wallGeo, mat.wall);
+        wall.position.set(px, 1.35, pz);
+        scene.add(wall);
+      } else if (t === 2) {
+        const key = new THREE.Mesh(new THREE.SphereGeometry(0.4), mat.key);
+        key.position.set(px, 0.5, pz);
+        scene.add(key);
+      } else if (t === 3) {
+        const door = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.5, 0.2), mat.door);
+        door.position.set(px, 1.1, pz);
+        scene.add(door);
+      } else if (t === 4) {
+        const chip = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.8, 6), mat.chip);
+        chip.rotation.x = Math.PI;
+        chip.position.set(px, 0.6, pz);
+        scene.add(chip);
+      } else if (t === 5) {
+        const socket = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.1, 32), mat.socket);
+        socket.position.set(px, 0.06, pz);
+        scene.add(socket);
+      }
+    }
+  }
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function resetLevel() {
+  grid = level1.map(r => r.slice());
+  playerX = 1; playerZ = 1;
+  enemyX = 5; enemyZ = 2;
+  keysCollected = 0;
+  document.getElementById('keyCount').textContent = '0';
+  document.getElementById('gameOver').style.display = 'none';
+  isMoving = false;
+  enemyIsMoving = false;
+  lastEnemyMoveTime = performance.now();  // ← reset timer
+  controls.getObject().position.set(TILE_SIZE, 2, TILE_SIZE);
+  player.position.set(TILE_SIZE, 0.9, TILE_SIZE);
+  enemy.position.set(enemyX * TILE_SIZE, 0.5, enemyZ * TILE_SIZE);
+  buildLevel();
+}
+</script>
+</body>
+</html>

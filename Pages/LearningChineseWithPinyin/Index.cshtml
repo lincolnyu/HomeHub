@@ -1,5 +1,5 @@
 @page
-@model IndexModel
+@model HomeHubApp.Pages.LearningChineseWithPinyin.IndexModel
 
 @{
     ViewData["Title"] = "Learning Chinese with Pinyin";
@@ -7,6 +7,19 @@
 
 <div class="text-center">
     <h1>Learning Chinese with Pinyin</h1>
-    <p>This is an independent tool. Add tool logic here.</p>
-    <!-- Example: Embed a simple canvas or form -->
+    <p>Paste Chinese text below to generate pinyin-adorned output.</p>
+
+    <form method="post">
+        <textarea asp-for="InputText" rows="10" cols="80" placeholder="Paste Chinese text here..."></textarea>
+        <br />
+        <button type="submit">Generate Pinyin</button>
+    </form>
+
+    @if (!string.IsNullOrEmpty(Model.OutputText))
+    {
+        <h2>Generated Output</h2>
+        <pre style="font-family: monospace; white-space: pre-wrap; border: 1px solid #ccc; padding: 10px; max-width: 800px; margin: 0 auto;">
+@Model.OutputText
+        </pre>
+    }
 </div>
