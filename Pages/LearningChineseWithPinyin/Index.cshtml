@@ -18,7 +18,15 @@
     @if (!string.IsNullOrEmpty(Model.OutputText))
     {
         <h2>Generated Output</h2>
-        <pre style="font-family: monospace; white-space: pre-wrap; border: 1px solid #ccc; padding: 10px; max-width: 800px; margin: 0 auto;">
+        <pre style="font-family: monospace; 
+                    white-space: pre-wrap; 
+                    border: 1px solid #ccc; 
+                    padding: 10px; 
+                    max-width: 800px; 
+                    margin: 0 auto; 
+                    text-align: left;
+                    font-size: 1.1rem;
+                    line-height: 1.4;"">
 @Model.OutputText
         </pre>
     }
