@@ -26,6 +26,14 @@ namespace HomeHubApp.Pages.LearningChineseWithPinyin
             }
         }
 
+        public IActionResult OnGetSample()
+        {
+            InputText = "鹅，鹅，鹅\n曲项向天歌\n白毛浮绿水\n红掌拨清波";
+
+            OnPost();   // ← would call your conversion right away
+            return Page();
+        }
+
         private string ConvertToPinyin(string input, int? lineCharacterLimit = null, (int,int)? adjuster = null)
         {
             PinyinFormat format = PinyinFormat.WITH_TONE_MARK | PinyinFormat.LOWERCASE | PinyinFormat.WITH_U_UNICODE;

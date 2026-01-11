@@ -1,4 +1,4 @@
-@page
+@page "{handler?}"
 @model HomeHubApp.Pages.LearningChineseWithPinyin.IndexModel
 
 @{
@@ -7,10 +7,13 @@
 
 <div class="text-center">
     <h1>Learning Chinese with Pinyin</h1>
-    <p>Paste Chinese text below to generate pinyin-adorned output.</p>
+    <p>
+        Paste Chinese text below to generate pinyin-adorned output,
+        or use <a href="/LearningChineseWithPinyin/Sample" class="sample-link">Sample Text</a>.
+    </p>
 
     <form method="post">
-        <textarea asp-for="InputText" rows="10" cols="80" placeholder="Paste Chinese text here..."></textarea>
+        <textarea asp-for="InputText" rows="5" cols="80" placeholder="Paste Chinese text here..."></textarea>
         <br />
         <button type="submit">Generate Pinyin</button>
     </form>
@@ -26,8 +29,21 @@
                     margin: 0 auto; 
                     text-align: left;
                     font-size: 1.5rem;
-                    line-height: 1.4;"">
+                    line-height: 1.4;">
 @Model.OutputText
         </pre>
     }
 </div>
+
+<style>
+    .sample-link {
+        color: #0066cc;
+        text-decoration: underline;
+        font-weight: 500;
+    }
+
+        .sample-link:hover {
+            color: #003366;
+            text-decoration: none;
+        }
+</style>
