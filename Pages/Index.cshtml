@@ -5,10 +5,20 @@
     ViewData["Title"] = "Home Hub - Main";
 }
 
-<div class="text-center">
+<style>
+    .no-underline a {
+        text-decoration: none;
+    }
+    .no-underline a:hover,
+    .no-underline a:focus {
+        text-decoration: underline;
+    }
+</style>
+
+<div class="text-center no-underline">
     <h1>Welcome to Home Hub</h1>
     <p>This site concerns various home-related services:</p>
-    <ul>
+    <ul style="list-style-type: none; padding-left: 0;">
         <li><a asp-page="/LearningChineseWithPinyin/Index">Learning Chinese with Pinyin</a></li>
         <li><a asp-page="/Arithmentic/Index">Arithmentic</a></li>
         <li><a asp-page="/InvoiceCollector/Index">Invoice Collector (Future Project)</a></li>
