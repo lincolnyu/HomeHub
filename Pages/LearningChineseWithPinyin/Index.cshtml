@@ -12,8 +12,8 @@
         or use <a href="/LearningChineseWithPinyin/Sample" class="sample-link">Sample Text</a>.
     </p>
 
-    <form method="post">
-        <textarea asp-for="InputText" rows="5" style="width:100%;max-width:100%;" placeholder="Paste Chinese text here..."></textarea>
+    <form id="pinyinForm" method="post">
+        <textarea asp-for="InputText" id="inputTextArea" rows="5" style="width:100%;max-width:100%;" placeholder="Paste Chinese text here..."></textarea>
         <br />
         <button type="submit">Generate Pinyin</button>
     </form>
@@ -47,3 +47,43 @@
             text-decoration: none;
         }
 </style>
+
+@section Scripts {
+    <script>
+        (function () {
+            var lastSubmittedValue = '';
+            var form = document.getElementById('pinyinForm');
+            var textarea = document.getElementById('inputTextArea');
+            var submitting = false;
+            var inputTimeout = null;
+
+            function checkAndSubmit() {
+                if (submitting) return;
+                var currentValue = textarea.value;
+                if (currentValue !== lastSubmittedValue) {
+                    submitting = true;
+                    lastSubmittedValue = currentValue;
+                    form.submit();
+                }
+            }
+
+            // On initial page load, set lastSubmittedValue to the current value
+            document.addEventListener('DOMContentLoaded', function () {
+                lastSubmittedValue = textarea.value;
+            });
+
+            // After form submit, reset submitting flag
+            form.addEventListener('submit', function () {
+                submitting = false;
+            });
+
+            // Start 3-sec timer on input change.
+            textarea.addEventListener('input', function () {
+                if (inputTimeout) {
+                    clearTimeout(inputTimeout);
+                }
+                inputTimeout = setTimeout(checkAndSubmit, 3000);
+            });
+        })();
+    </script>
+}
