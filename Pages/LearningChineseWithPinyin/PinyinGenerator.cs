@@ -155,9 +155,23 @@ namespace HomeHubApp.Pages.LearningChineseWithPinyin
         private static string? SpecialCases(string subStr, int i, PinyinItem? pinyinItem)
         {
             var c = subStr[i];
-            if (c == '尽')
+            if (c == '还')
             {
-                if (i < subStr.Length - 1 && subStr[i + 1] == '管')
+                if (pinyinItem is not null)
+                {
+                    if (IsInContext(subStr, i, "还债", "还钱", "还情", "还愿", "还原", "还乡", "还了", "还给", "归还"))
+                    {
+                        return pinyinItem[1];
+                    }
+                    if (i == subStr.Length-1)
+                    {
+                        return pinyinItem[1];
+                    }
+                }
+            }
+            else if (c == '尽')
+            {
+                if (IsInContext(subStr, i, "尽管"))
                 {
                     return "jǐn";
                 }
@@ -168,7 +182,7 @@ namespace HomeHubApp.Pages.LearningChineseWithPinyin
             }
             else if (c == '观')
             {
-                if (i > 0 && subStr[i - 1] == '道' && pinyinItem is not null)
+                if (IsInContext(subStr, i, "道观") && pinyinItem is not null)
                 {
                     return pinyinItem[1];
                 }
@@ -177,21 +191,88 @@ namespace HomeHubApp.Pages.LearningChineseWithPinyin
             {
                 if (pinyinItem is not null)
                 {
-                    if (i < subStr.Length - 1 && subStr[i + 1] == '纫')
+                    if (IsInContext(subStr, i, "缝纫"))
                     {
                         return pinyinItem[0];
                     }
-                    if (i < subStr.Length - 1 && subStr[i + 1] == '隙')
+                    if (IsInContext(subStr, i, "缝隙", "合缝", "条缝", "丝缝"))
                     {
                         return pinyinItem[1];
                     }
-                    if (i > 0 && (subStr[i - 1] == '条' || subStr[i - 1] == '丝' || subStr[i - 1] == '合'))
+                }
+            }
+            else if (c == '种')
+            {
+                if (pinyinItem is not null)
+                {
+                    if (IsInContext(subStr, i, "一种", "有种"))
+                    {
+                        return pinyinItem[0];
+                    }
+                    if (IsInContext(subStr, i, "种菜", "种地", "种田", "种树"))
+                    {
+                        return pinyinItem[2];
+                    }
+                    if (IsInContext(subStr, i, "种一粒"))
+                    {
+                        return pinyinItem[2];
+                    }
+                    if (IsInContext(subStr, i, "老种经略", "小种经略"))
+                    {
+                        return pinyinItem[1];
+                    }
+                }
+            }
+            else if (c == '血')
+            {
+                if (pinyinItem is not null)
+                {
+                    if (IsInContext(subStr, i, "用血", "血淋淋", "一滴血", "一针见血"))
+                    {
+                        return pinyinItem[1];
+                    }
+                    if (IsEnding(subStr, i, "血了") || i == subStr.Length-1)
                     {
                         return pinyinItem[1];
                     }
                 }
             }
             return null;
+        }
+
+        private static bool IsInContext(string subStr, int i, string context)
+        {
+            var c = subStr[i];
+            var iInContext = context.IndexOf(c);
+            if (i < iInContext)
+            {
+                return false;
+            }
+            if (subStr.Length - i < context.Length - iInContext)
+            {
+                return false;
+            }
+            return subStr[(i - iInContext)..(i - iInContext + context.Length)] == context;
+        }
+
+        private static bool IsEnding(string subStr, int i, string context)
+        {
+            var c = subStr[i];
+            var iInContext = context.IndexOf(c);
+            if (i < iInContext)
+            {
+                return false;
+            }
+            if (subStr.Length - i != context.Length - iInContext)
+            {
+                return false;
+            }
+            return subStr[(i - iInContext)..(i - iInContext + context.Length)] == context;
+        }
+
+        private static bool IsInContext(string subStr, int i, params string[] contexts)
+        {
+            return contexts.Any(x=> IsInContext(subStr, i, x));
         }
     }
 }
