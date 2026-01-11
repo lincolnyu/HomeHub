@@ -169,6 +169,20 @@ namespace HomeHubApp.Pages.LearningChineseWithPinyin
                     }
                 }
             }
+            else if (c == '干')
+            {
+                if (pinyinItem is not null)
+                {
+                    if (IsInContext(subStr, i, "干什么", "干啥", "干部", "干事", "干成", "干大", "干小", "干校"))
+                    {
+                        return pinyinItem[1];
+                    }
+                    if (i == subStr.Length - 1)
+                    {
+                        return pinyinItem[1];
+                    }
+                }
+            }
             else if (c == '尽')
             {
                 if (IsInContext(subStr, i, "尽管"))
@@ -231,7 +245,17 @@ namespace HomeHubApp.Pages.LearningChineseWithPinyin
                     {
                         return pinyinItem[1];
                     }
-                    if (IsEnding(subStr, i, "血了") || i == subStr.Length-1)
+                    if (IsEnding(subStr, i, "血了") || i == subStr.Length - 1)
+                    {
+                        return pinyinItem[1];
+                    }
+                }
+            }
+            else if (c == '子')
+            {
+                if (pinyinItem is not null)
+                {
+                    if (IsInContext(subStr, i, "颗子", "粒子", "女子", "孔子"))
                     {
                         return pinyinItem[1];
                     }
