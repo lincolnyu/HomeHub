@@ -22,7 +22,7 @@ namespace HomeHubApp.Pages.LearningChineseWithPinyin
             if (!string.IsNullOrEmpty(InputText))
             {
                 // Placeholder: Call your conversion logic here (implement the method below or replace with your library/program call)
-                OutputText = ConvertToPinyin(InputText, 70, (16,-1));
+                OutputText = ConvertToPinyin(InputText, 32, (13,-1));
             }
         }
 
