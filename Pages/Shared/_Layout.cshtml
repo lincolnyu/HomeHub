@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="~/HomeHubApp.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
+    <header id="mainHeader" class="sticky-top">
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
                 <a class="navbar-brand" asp-area="" asp-page="/Index">HomeHub</a>
@@ -46,6 +46,44 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            var header = document.getElementById('mainHeader');
+            var hideTimeout;
+            var lastScrollY = window.scrollY;
+
+            function showHeader() {
+                header.style.transform = 'translateY(0)';
+                header.style.transition = 'transform 0.3s';
+            }
+
+            function hideHeader() {
+                header.style.transform = 'translateY(-100%)';
+                header.style.transition = 'transform 0.3s';
+            }
+
+            function onScroll() {
+                clearTimeout(hideTimeout);
+
+                if (window.scrollY === 0) {
+                    showHeader();
+                } else {
+                    showHeader();
+                    hideTimeout = setTimeout(function () {
+                        if (window.scrollY !== 0) {
+                            hideHeader();
+                        }
+                    }, 1500);
+                }
+                lastScrollY = window.scrollY;
+            }
+
+            window.addEventListener('scroll', onScroll);
+
+            // Ensure header is visible on load
+            showHeader();
+        })();
+    </script>
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
