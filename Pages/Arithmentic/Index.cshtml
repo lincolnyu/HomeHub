@@ -6,10 +6,6 @@
     <!-- full control, no _Layout needed -->
 }
 
-<p style="margin-bottom:2rem;">
-    <a href="/" style="color:#0f0; font-size:1.1rem; text-decoration:underline;">&lt; Home</a>
-</p>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,6 +46,10 @@
 <body>
     @if (!Model.GameStarted)
     {
+        <p style="margin-bottom:2rem;">
+            <a href="/" style="color:#0f0; font-size:1.1rem; text-decoration:underline;">&lt; Home</a>
+        </p>
+
         <h1>Multiplication Trainer</h1>
         <p>
             Quiz of multiplying @Model.DigitsOperand1-digit and @Model.DigitsOperand2-digit numbers.<br />
@@ -77,14 +77,11 @@
         }
         <p><a href="/Arithmentic">Start again</a></p>
     }
-    else
+    else if (Model.IsAwaitingNextQuestion)
     {
-        <h2>@Model.CurrentOperand1 × @Model.CurrentOperand2 = </h2>
-
-        <form method="post" asp-page-handler="Answer">
-            <input type="text" name="userAnswer" autofocus autocomplete="off" />
-            <input type="hidden" name="startTicks" value="@DateTime.Now.Ticks" />
-        </form>
+        <p style="margin-bottom:2rem;">
+            <a asp-page-handler="Restart" style="color:#0f0; font-size:1.1rem; text-decoration:underline;">&lt; Quit</a>
+        </p>
 
         @if (!string.IsNullOrEmpty(Model.LastMessage))
         {
@@ -93,16 +90,34 @@
             </div>
         }
 
-        @if (Model.LoggedAnswers.Any())
-        {
-            <div class="log">
-                <strong>Log:</strong><br />
-                @foreach (var a in Model.LoggedAnswers.TakeLast(10))
-                {
-                    <div>@a</div>
-                }
-            </div>
-        }
+        // @if (Model.LoggedAnswers.Any())
+        // {
+        //     <div class="log">
+        //         <strong>Log:</strong><br />
+        //         @foreach (var a in Model.LoggedAnswers.TakeLast(10))
+        //         {
+        //             <div>@a</div>
+        //         }
+        //     </div>
+        // }
+
+        <p style="margin-top:2rem;">
+            <a asp-page-handler="NextQuestion" style="color:#0f0; font-size:1.1rem; text-decoration:underline;">Next &gt;</a>
+        </p>
+    }
+    else
+    {
+        <p style="margin-bottom:2rem;">
+            <a asp-page-handler="Restart" style="color:#0f0; font-size:1.1rem; text-decoration:underline;">&lt; Quit</a>
+        </p>
+
+
+        <h2>@Model.CurrentOperand1 × @Model.CurrentOperand2 = </h2>
+
+        <form method="post" asp-page-handler="Answer">
+            <input type="text" name="userAnswer" autofocus autocomplete="off" />
+            <input type="hidden" name="startTicks" value="@DateTime.Now.Ticks" />
+        </form>
     }
 
     <script>

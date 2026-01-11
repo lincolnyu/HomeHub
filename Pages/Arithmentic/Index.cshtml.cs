@@ -10,6 +10,7 @@ public class ArithmenticModel : PageModel
     private static string? _lastMessage;
     private static bool _gameStarted = false;
     private static bool _isFinished = false;
+    private static bool _isAwaitingNextQuestion = false;
 
     // Config values exposed to the view
     public int DigitsOperand1 => _game?.DigitsOperand1 ?? 0;
@@ -22,6 +23,7 @@ public class ArithmenticModel : PageModel
 
     public bool GameStarted => _gameStarted;
     public bool IsFinished => _isFinished;
+    public bool IsAwaitingNextQuestion => _isAwaitingNextQuestion;
     public string? LastMessage => _lastMessage;
     public List<Answer> LoggedAnswers => _loggedAnswers;
 
@@ -39,19 +41,24 @@ public class ArithmenticModel : PageModel
 
     public void OnGet()
     {
-        if (_game == null)
-        {
-            _game = Game.CreateFromConfig(@"Pages\Arithmentic\multiplier.cfg");
-        }
+        _game ??= Game.CreateFromConfig(@"Pages\Arithmentic\multiplier.cfg");
     }
 
     public IActionResult OnPostStart()
     {
         _gameStarted = true;
         _isFinished = false;
+        _isAwaitingNextQuestion = false;
         _loggedAnswers.Clear();
         _lastMessage = null;
         _game!.StartSession();
+        return RedirectToPage();
+    }
+
+    public IActionResult OnGetRestart()
+    {
+        _gameStarted = false;
+        _game ??= Game.CreateFromConfig(@"Pages\Arithmentic\multiplier.cfg");
         return RedirectToPage();
     }
 
@@ -71,7 +78,17 @@ public class ArithmenticModel : PageModel
             _gameStarted = false;
             _game.SaveLogIfEnabled();
         }
+        else
+        {
+            _isAwaitingNextQuestion = true;
+        }
 
+        return RedirectToPage();
+    }
+
+    public IActionResult OnGetNextQuestion()
+    {
+        _isAwaitingNextQuestion = false;
         return RedirectToPage();
     }
 
@@ -81,6 +98,6 @@ public class ArithmenticModel : PageModel
             return NotFound();
 
         var bytes = System.IO.File.ReadAllBytes(_game.LogFilePath);
-        return File(bytes, "text/plain", System.IO.Path.GetFileName(_game.LogFilePath));
+        return File(bytes, "text/plain", Path.GetFileName(_game.LogFilePath));
     }
 }
