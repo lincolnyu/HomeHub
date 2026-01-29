@@ -16,6 +16,8 @@ namespace HomeHubApp.Pages.LearningChineseWithPinyin
                 if (line == null)
                     break;
 
+                (line, var overridingDict) = PreprocessPinyinAnnotations(line);
+
                 StringBuilder pinyinSb = new();
                 StringBuilder charSb = new();
 
@@ -41,16 +43,27 @@ namespace HomeHubApp.Pages.LearningChineseWithPinyin
                                 var pinyinArray = Pinyin4Net.GetPinyinArray(subStr, format);
                                 for (var j = 0; j < subStr.Length; j++)
                                 {
-                                    var specialPinyin = SpecialCases(subStr, j, j < pinyinArray.Count? pinyinArray[j] : null);
-                                    if (specialPinyin != null)
+                                    if (overridingDict.TryGetValue(currentStart.Value + j, out var overridingIndex))
                                     {
-                                        selectedPinyins[currentStart.Value + j] = specialPinyin;
+                                        overridingIndex = overridingIndex < 0? 0 : overridingIndex < pinyinArray[j].Count ? overridingIndex : pinyinArray[j].Count-1;
+                                        if (j < pinyinArray.Count)
+                                        {
+                                            selectedPinyins[currentStart.Value + j] = pinyinArray[j][overridingIndex];
+                                        }
                                     }
                                     else
                                     {
-                                        if (j < pinyinArray.Count)
+                                        var specialPinyin = SpecialCases(subStr, j, j < pinyinArray.Count? pinyinArray[j] : null);
+                                        if (specialPinyin != null)
                                         {
-                                            selectedPinyins[currentStart.Value + j] = pinyinArray[j][0];
+                                            selectedPinyins[currentStart.Value + j] = specialPinyin;
+                                        }
+                                        else
+                                        {
+                                            if (j < pinyinArray.Count)
+                                            {
+                                                selectedPinyins[currentStart.Value + j] = pinyinArray[j][0];
+                                            }
                                         }
                                     }
                                 }
@@ -150,6 +163,42 @@ namespace HomeHubApp.Pages.LearningChineseWithPinyin
                 sw.AppendLine(charSb.ToString());
             }
             return sw.ToString();
+        }
+
+        private static (string, Dictionary<int,int>) PreprocessPinyinAnnotations(string line)
+        {
+            Dictionary<int,int> map = [];
+            var sb = new StringBuilder();
+            var sbNum = new StringBuilder();
+            int? charLocation = null;
+
+            foreach (var c  in line)
+            {
+                if (charLocation is not null)
+                {
+                    if (c is ')')
+                    {
+                        if(int.TryParse(sbNum.ToString(), out var index))
+                        {
+                            map[charLocation.Value] = index;
+                        }
+                        charLocation = null;
+                    }
+                    else if (char.IsDigit(c))
+                    {
+                        sbNum.Append(c);
+                    }
+                }
+                else if (c is '(' && sb.Length > 0)
+                {
+                    charLocation = sb.Length-1;
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+            return (sb.ToString(), map);
         }
 
         private static string? SpecialCases(string subStr, int i, PinyinItem? pinyinItem)
@@ -256,6 +305,20 @@ namespace HomeHubApp.Pages.LearningChineseWithPinyin
                 if (pinyinItem is not null)
                 {
                     if (IsInContext(subStr, i, "颗子", "粒子", "女子", "孔子"))
+                    {
+                        return pinyinItem[1];
+                    }
+                }
+            }
+            else if (c == '处')
+            {
+                if (pinyinItem is not null)
+                {
+                    if (IsInContext(subStr, i, "处在", "处于", "处女", "处子", "处境", "相处"))
+                    {
+                        return pinyinItem[0];
+                    }
+                    else
                     {
                         return pinyinItem[1];
                     }
