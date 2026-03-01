@@ -35,7 +35,21 @@ public class ResultsModel : PageModel
         {
             var q = questions[i];
             var userAns = i < userAnswers.Count ? userAnswers[i] : "";
-            var correct = string.Equals(userAns, q.CorrectAnswer, StringComparison.OrdinalIgnoreCase);
+            bool correct;
+
+            if (q.Type == "multi")
+            {
+                var userList = string.IsNullOrEmpty(userAns)
+                    ? new List<string>()
+                    : userAns.Split(',').Select(x => x.Trim()).OrderBy(x => x).ToList();
+                var correctList = q.CorrectAnswers.OrderBy(x => x).ToList();
+                correct = userList.SequenceEqual(correctList);
+            }
+            else // single or text
+            {
+                correct = q.CorrectAnswers.Any(c =>
+                    string.Equals(userAns.Trim(), c.Trim(), StringComparison.OrdinalIgnoreCase));
+            }
 
             if (correct) Score++;
 

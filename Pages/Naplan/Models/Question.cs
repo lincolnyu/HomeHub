@@ -12,7 +12,9 @@ public class Question
 
     public string? ImageUrl { get; set; }
 
+    public string Type { get; set; } = "single"; // single, multi, text
+
     public List<string> Options { get; set; } = new();
 
-    [Required] public string CorrectAnswer { get; set; } = string.Empty;
+    public List<string> CorrectAnswers { get; set; } = new();
 }

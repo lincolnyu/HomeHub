@@ -1,8 +1,8 @@
 ﻿@page
-@model HomeHubApp.Pages.Naplan.ResultsModel
+@model ResultsModel
 @{
     ViewData["Title"] = "Your Results";
-    var percentage = Model.Total > 0 ? (Model.Score * 100 / Model.Total) : 0;
+    var percentage = Model.Total > 0 ? Model.Score * 100 / Model.Total : 0;
 }
 
 <div class="container py-5">
@@ -25,20 +25,20 @@
                     </div>
                     <div class="card-body">
                         <p class="fs-5">@r.Question.Content</p>
-                        
+
                         @if (!string.IsNullOrEmpty(r.Question.ImageUrl))
                         {
-                            <img src="@r.Question.ImageUrl" class="img-fluid rounded mb-3" style="max-height:280px;" />
+                            <img src="@r.Question.ImageUrl" class="img-fluid rounded mb-3" style="max-height:280px;"/>
                         }
-                        
+
                         <div class="row">
                             <div class="col-md-6">
                                 <strong>Your answer:</strong><br>
                                 <span class="fs-4">@(string.IsNullOrEmpty(r.UserAnswer) ? "(no answer)" : r.UserAnswer)</span>
                             </div>
                             <div class="col-md-6">
-                                <strong>Correct answer:</strong><br>
-                                <span class="fs-4 text-success">@r.Question.CorrectAnswer</span>
+                                <strong>Correct answer@(r.Question.CorrectAnswers.Count > 1 ? "s" : ""):</strong><br>
+                                <span class="fs-4 text-success">@string.Join(", ", r.Question.CorrectAnswers)</span>
                             </div>
                         </div>
                     </div>
@@ -48,7 +48,7 @@
     </div>
 
     <div class="text-center mt-5">
-        <a asp-page="/Test" class="btn btn-primary btn-lg px-5">Try Again</a>
-        <a href="/" class="btn btn-outline-secondary btn-lg px-5 ms-3">Back to Home</a>
+        <a asp-page="Test" class="btn btn-primary btn-lg px-5">Try Again</a>
+        <a asp-page="Index" class="btn btn-outline-secondary btn-lg px-5 ms-3">Back to Home</a>
     </div>
 </div>

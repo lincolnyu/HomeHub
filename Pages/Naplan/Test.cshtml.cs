@@ -17,7 +17,9 @@ public class TestModel : PageModel
 
     [BindProperty(SupportsGet = true)] public int CurrentIndex { get; set; }
 
-    [BindProperty] public string SelectedAnswer { get; set; } = string.Empty;
+    [BindProperty] public string SelectedAnswer { get; set; } = string.Empty; // For single/text
+
+    [BindProperty] public List<string> SelectedMulti { get; set; } = new(); // For multi
 
     public List<Question> Questions { get; private set; } = new();
     public Question CurrentQuestion { get; private set; } = new();
@@ -30,7 +32,20 @@ public class TestModel : PageModel
         CurrentQuestion = Questions[CurrentIndex];
 
         var answers = GetOrInitUserAnswers();
-        SelectedAnswer = answers.Count > CurrentIndex ? answers[CurrentIndex] : "";
+        var userAns = answers.Count > CurrentIndex ? answers[CurrentIndex] : "";
+
+        if (CurrentQuestion.Type == "multi")
+        {
+            SelectedMulti = string.IsNullOrEmpty(userAns)
+                ? new List<string>()
+                : userAns.Split(',').Select(x => x.Trim()).ToList();
+            SelectedAnswer = "";
+        }
+        else
+        {
+            SelectedAnswer = userAns;
+            SelectedMulti = new List<string>();
+        }
     }
 
     public IActionResult OnPostNext()
@@ -53,7 +68,7 @@ public class TestModel : PageModel
     {
         LoadQuestions();
         SaveCurrentAnswer();
-        return RedirectToPage("./Results");
+        return RedirectToPage("Results");
     }
 
     private void LoadQuestions()
@@ -62,8 +77,7 @@ public class TestModel : PageModel
         TotalQuestions = Questions.Count;
         if (TotalQuestions == 0)
             // Graceful fallback
-            CurrentQuestion = new Question
-                { Content = "No questions loaded. Please add wwwroot/data/naplan-questions.json" };
+            CurrentQuestion = new Question { Content = "No questions loaded. Please add naplan-questions.json" };
     }
 
     private List<string> GetOrInitUserAnswers()
@@ -89,8 +103,15 @@ public class TestModel : PageModel
     private void SaveCurrentAnswer()
     {
         var answers = GetOrInitUserAnswers();
-        if (CurrentIndex < answers.Count)
-            answers[CurrentIndex] = SelectedAnswer?.Trim() ?? "";
+        if (CurrentIndex >= answers.Count) return;
+
+        var toSave = CurrentQuestion.Type switch
+        {
+            "multi" => string.Join(",", SelectedMulti.OrderBy(x => x)),
+            _ => SelectedAnswer?.Trim() ?? ""
+        };
+
+        answers[CurrentIndex] = toSave;
         SaveUserAnswers(answers);
     }
 
