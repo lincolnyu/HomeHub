@@ -27,9 +27,7 @@ public class TestModel : PageModel
 
     public void OnGet(int index = 0)
     {
-        LoadQuestions();
-        CurrentIndex = Math.Clamp(index, 0, TotalQuestions - 1);
-        CurrentQuestion = Questions[CurrentIndex];
+        LoadQuestions(index);
 
         var answers = GetOrInitUserAnswers();
         var userAns = answers.Count > CurrentIndex ? answers[CurrentIndex] : "";
@@ -71,13 +69,14 @@ public class TestModel : PageModel
         return RedirectToPage("Results");
     }
 
-    private void LoadQuestions()
+    private void LoadQuestions(int? index = null)
     {
         Questions = _service.GetQuestions();
         TotalQuestions = Questions.Count;
-        if (TotalQuestions == 0)
-            // Graceful fallback
-            CurrentQuestion = new Question { Content = "No questions loaded. Please add naplan-questions.json" };
+
+        if (index is not null) CurrentIndex = Math.Clamp(index.Value, 0, TotalQuestions - 1);
+        // Graceful fallback
+        CurrentQuestion = TotalQuestions == 0 ? new Question { Content = "No questions loaded. Please add naplan-questions.json" } : Questions[CurrentIndex];
     }
 
     private List<string> GetOrInitUserAnswers()
