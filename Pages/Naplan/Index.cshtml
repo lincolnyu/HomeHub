@@ -1,0 +1,20 @@
+﻿ @page
+@model HomeHubApp.Pages.Naplan.IndexModel
+@{
+    ViewData["Title"] = "NAPLAN Practice Test";
+}
+
+<div class="container py-5">
+    <div class="text-center">
+        <h1 class="display-3 fw-bold text-primary mb-4">🎉 NAPLAN Practice for Kids 🎉</h1>
+        <p class="lead fs-3 mb-5">Fun questions like the real NAPLAN test!<br>Multiple choice • Pictures • Instant results</p>
+
+        <a asp-page="./Test" class="btn btn-success btn-lg px-5 py-3 fs-3 shadow">
+            🚀 Start the Test
+        </a>
+
+        <div class="mt-5 text-muted">
+            <small>Questions load from <code>wwwroot/data/naplan-questions.json</code></small>
+        </div>
+    </div>
+</div>

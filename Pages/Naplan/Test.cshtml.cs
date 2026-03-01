@@ -1,0 +1,101 @@
+using System.Text.Json;
+using HomeHubApp.Pages.Naplan.Models;
+using HomeHubApp.Pages.Naplan.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace HomeHubApp.Pages.Naplan;
+
+public class TestModel : PageModel
+{
+    private readonly IQuestionService _service;
+
+    public TestModel(IQuestionService service)
+    {
+        _service = service;
+    }
+
+    [BindProperty(SupportsGet = true)] public int CurrentIndex { get; set; }
+
+    [BindProperty] public string SelectedAnswer { get; set; } = string.Empty;
+
+    public List<Question> Questions { get; private set; } = new();
+    public Question CurrentQuestion { get; private set; } = new();
+    public int TotalQuestions { get; private set; }
+
+    public void OnGet(int index = 0)
+    {
+        LoadQuestions();
+        CurrentIndex = Math.Clamp(index, 0, TotalQuestions - 1);
+        CurrentQuestion = Questions[CurrentIndex];
+
+        var answers = GetOrInitUserAnswers();
+        SelectedAnswer = answers.Count > CurrentIndex ? answers[CurrentIndex] : "";
+    }
+
+    public IActionResult OnPostNext()
+    {
+        LoadQuestions();
+        SaveCurrentAnswer();
+        var next = Math.Min(CurrentIndex + 1, TotalQuestions - 1);
+        return RedirectToPage(new { index = next });
+    }
+
+    public IActionResult OnPostPrev()
+    {
+        LoadQuestions();
+        SaveCurrentAnswer();
+        var prev = Math.Max(CurrentIndex - 1, 0);
+        return RedirectToPage(new { index = prev });
+    }
+
+    public IActionResult OnPostSubmit()
+    {
+        LoadQuestions();
+        SaveCurrentAnswer();
+        return RedirectToPage("./Results");
+    }
+
+    private void LoadQuestions()
+    {
+        Questions = _service.GetQuestions();
+        TotalQuestions = Questions.Count;
+        if (TotalQuestions == 0)
+            // Graceful fallback
+            CurrentQuestion = new Question
+                { Content = "No questions loaded. Please add wwwroot/data/naplan-questions.json" };
+    }
+
+    private List<string> GetOrInitUserAnswers()
+    {
+        var json = HttpContext.Session.GetString("UserAnswers");
+        if (string.IsNullOrEmpty(json))
+        {
+            var empty = Enumerable.Repeat("", TotalQuestions).ToList();
+            SaveUserAnswers(empty);
+            return empty;
+        }
+
+        var list = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+        if (list.Count != TotalQuestions)
+        {
+            list = list.Concat(Enumerable.Repeat("", TotalQuestions - list.Count)).ToList();
+            SaveUserAnswers(list);
+        }
+
+        return list;
+    }
+
+    private void SaveCurrentAnswer()
+    {
+        var answers = GetOrInitUserAnswers();
+        if (CurrentIndex < answers.Count)
+            answers[CurrentIndex] = SelectedAnswer?.Trim() ?? "";
+        SaveUserAnswers(answers);
+    }
+
+    private void SaveUserAnswers(List<string> answers)
+    {
+        HttpContext.Session.SetString("UserAnswers", JsonSerializer.Serialize(answers));
+    }
+}

@@ -1,0 +1,54 @@
+﻿@page
+@model HomeHubApp.Pages.Naplan.ResultsModel
+@{
+    ViewData["Title"] = "Your Results";
+    var percentage = Model.Total > 0 ? (Model.Score * 100 / Model.Total) : 0;
+}
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4">🎉 Well Done! 🎉</h1>
+        <div class="display-1 fw-bold text-success">@Model.Score / @Model.Total</div>
+        <div class="fs-2 text-muted">@percentage% correct</div>
+    </div>
+
+    <div class="row">
+        @foreach (var r in Model.QuestionResults)
+        {
+            <div class="col-12 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="fw-bold">@r.Question.Title</span>
+                        <span class="@(r.IsCorrect ? "text-success" : "text-danger") fs-5">
+                            @(r.IsCorrect ? "✅ Correct" : "❌ Incorrect")
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <p class="fs-5">@r.Question.Content</p>
+                        
+                        @if (!string.IsNullOrEmpty(r.Question.ImageUrl))
+                        {
+                            <img src="@r.Question.ImageUrl" class="img-fluid rounded mb-3" style="max-height:280px;" />
+                        }
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Your answer:</strong><br>
+                                <span class="fs-4">@(string.IsNullOrEmpty(r.UserAnswer) ? "(no answer)" : r.UserAnswer)</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Correct answer:</strong><br>
+                                <span class="fs-4 text-success">@r.Question.CorrectAnswer</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="text-center mt-5">
+        <a asp-page="/Test" class="btn btn-primary btn-lg px-5">Try Again</a>
+        <a href="/" class="btn btn-outline-secondary btn-lg px-5 ms-3">Back to Home</a>
+    </div>
+</div>

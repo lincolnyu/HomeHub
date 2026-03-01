@@ -1,0 +1,94 @@
+﻿@page "{index:int?}"
+@model HomeHubApp.Pages.Naplan.TestModel
+{
+    ViewData["Title"] = $"Question {Model.CurrentIndex + 1}";
+}
+
+<div class="container py-4">
+    <!-- Progress -->
+    <div class="mb-4">
+        <div class="d-flex justify-content-between small text-muted mb-1">
+            <span>Question @(Model.CurrentIndex + 1) of @Model.TotalQuestions</span>
+            <span>@((Model.CurrentIndex + 1) * 100 / Model.TotalQuestions)% complete</span>
+        </div>
+        <div class="progress" style="height: 25px;">
+            <div class="progress-bar progress-bar-striped bg-success" 
+                 style="width: @((Model.CurrentIndex + 1.0) / Model.TotalQuestions * 100)%"></div>
+        </div>
+    </div>
+
+    @if (Model.TotalQuestions == 0)
+    {
+        <div class="alert alert-warning">No questions found. Add wwwroot/data/naplan-questions.json</div>
+    }
+    else
+    {
+        <form method="post">
+            <input type="hidden" asp-for="CurrentIndex" />
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-primary text-white fs-4">
+                    @Model.CurrentQuestion.Title
+                </div>
+                <div class="card-body p-5">
+                    <p class="fs-3 fw-normal mb-4">@Model.CurrentQuestion.Content</p>
+
+                    @if (!string.IsNullOrEmpty(Model.CurrentQuestion.ImageUrl))
+                    {
+                        <div class="text-center mb-4">
+                            <img src="@Model.CurrentQuestion.ImageUrl" 
+                                 class="img-fluid rounded shadow" 
+                                 style="max-height: 380px; border: 8px solid #f0f0f0;" 
+                                 alt="Question illustration" />
+                        </div>
+                    }
+
+                    <div class="mt-4">
+                        @for (int i = 0; i < Model.CurrentQuestion.Options.Count; i++)
+                        {
+                            var opt = Model.CurrentQuestion.Options[i];
+                            <div class="form-check mb-3 p-3 border rounded bg-light">
+                                <input class="form-check-input" type="radio" 
+                                       id="opt_@i" name="SelectedAnswer" value="@opt"
+                                       checked="@(Model.SelectedAnswer == opt)">
+                                <label class="form-check-label fs-4 w-100" for="opt_@i">
+                                    @opt
+                                </label>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="d-flex justify-content-between align-items-center">
+                @if (Model.CurrentIndex > 0)
+                {
+                    <button type="submit" asp-page-handler="Prev" 
+                            class="btn btn-outline-secondary btn-lg px-5">
+                        ← Previous
+                    </button>
+                }
+                else
+                {
+                    <div></div>
+                }
+
+                @if (Model.CurrentIndex < Model.TotalQuestions - 1)
+                {
+                    <button type="submit" asp-page-handler="Next" 
+                            class="btn btn-primary btn-lg px-5">
+                        Next →
+                    </button>
+                }
+                else
+                {
+                    <button type="submit" asp-page-handler="Submit" 
+                            class="btn btn-success btn-lg px-5">
+                        ✅ Submit Test
+                    </button>
+                }
+            </div>
+        </form>
+    }
+</div>

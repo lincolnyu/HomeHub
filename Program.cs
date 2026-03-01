@@ -1,7 +1,21 @@
-var builder = WebApplication.CreateBuilder(args);
+    using HomeHubApp.Pages.Naplan.Services;
+
+    var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+
+// Register our question loader as singleton (loads once at startup)
+builder.Services.AddSingleton<IQuestionService, QuestionService>();
+
+// Session support (stores user answers between pages)
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(60);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 
 builder.WebHost.UseUrls(
     "http://0.0.0.0:5000",
@@ -32,6 +46,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthorization();
+app.UseSession();
 
 app.MapStaticAssets();
 app.MapRazorPages()
