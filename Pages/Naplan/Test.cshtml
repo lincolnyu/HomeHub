@@ -22,7 +22,7 @@
         <div id="elapsedTime" class="fs-4 fw-bold text-primary">
             Elapsed: --:--
         </div>
-        <div id="remainingTime" class="fs-4 fw-bold text-danger" style="display: none;">
+        <div id="remainingTime" class="fs-4 fw-bold text-danger">
             Remaining: --:--
         </div>
     </div>
@@ -149,6 +149,13 @@
             const serverStartTimeIso = '@(ViewData["StartTimeUtcIso"] ?? "")';
             const totalSeconds       = @(Model.TotalTimeSeconds ?? 0);
             const hasTimeLimit       = totalSeconds > 0;
+
+            // Visibility of the remaining time
+            if (!hasTimeLimit) {
+                remainingDisplay.style.display = 'none';
+            } else {
+                remainingDisplay.style.display = 'block';  // or '' or 'inline-block'
+            }
 
             // Initialize start time
             if (forceReset) {
