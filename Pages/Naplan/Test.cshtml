@@ -18,6 +18,24 @@
         </div>
     </div>
 
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <div id="elapsedTime" class="fs-4 fw-bold text-primary">
+            Elapsed: --:--
+        </div>
+        <div id="remainingTime" class="fs-4 fw-bold text-danger" style="display: none;">
+            Remaining: --:--
+        </div>
+    </div>
+
+    <!-- Time-up overlay (hidden by default) -->
+    <div id="timeUpOverlay" class="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-75 d-none d-flex align-items-center justify-content-center" style="z-index: 2000;">
+        <div class="bg-white p-5 rounded shadow-lg text-center">
+            <h2 class="text-danger mb-4">Time's Up!</h2>
+            <p class="fs-5 mb-4">Your test has been automatically submitted.</p>
+            <button id="viewResultsBtn" class="btn btn-primary btn-lg px-5">OK – See Results</button>
+        </div>
+    </div>
+
     @if (Model.TotalQuestions == 0)
     {
         <div class="alert alert-warning">No questions found. Add wwwroot/data/naplan-questions.json</div>
@@ -115,3 +133,147 @@
         </form>
     }
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM elements
+            const elapsedDisplay   = document.getElementById('elapsedTime');
+            const remainingDisplay = document.getElementById('remainingTime');
+            const overlay          = document.getElementById('timeUpOverlay');
+            const viewResultsBtn   = document.getElementById('viewResultsBtn');
+            const form             = document.querySelector('form');
+
+            // Server-passed values
+            const forceReset         = '@(ViewData["ForceReset"]?.ToString() ?? "false")' === 'true';
+            const serverStartTimeIso = '@(ViewData["StartTimeUtcIso"] ?? "")';
+            const totalSeconds       = @(Model.TotalTimeSeconds ?? 0);
+            const hasTimeLimit       = totalSeconds > 0;
+
+            // Initialize start time
+            if (forceReset) {
+                localStorage.removeItem('naplanTestStart');
+            }
+
+            let startMillis = serverStartTimeIso
+                ? Date.parse(serverStartTimeIso)
+                : Date.now();
+
+            if (!serverStartTimeIso) {
+                localStorage.setItem('naplanTestStart', new Date(startMillis).toISOString());
+            }
+
+            // Already timed out on load?
+            if (hasTimeLimit && (Date.now() - startMillis) / 1000 >= totalSeconds) {
+                showTimeUp(true); // true = already submitted or no need to submit
+                return;
+            }
+
+            let isTimeUp = false;
+            let submitInProgress = false;
+
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            function showTimeUp(alreadySubmitted = false) {
+                overlay.classList.remove('d-none');
+                document.querySelectorAll('input, button:not(#viewResultsBtn)').forEach(el => el.disabled = true);
+
+                if (!alreadySubmitted && form) {
+                    // Give user 1.5–2 seconds to read message before auto-submit
+                    setTimeout(() => {
+                        if (!submitInProgress) {
+                            submitForm();
+                        }
+                    }, 3000);
+                }
+            }
+
+            function submitForm() {
+                if (!form || submitInProgress) return;
+
+                console.log("Preparing manual fetch submit...");
+
+                const formData = new FormData();
+
+                // Manually add important fields
+                formData.append('handler', 'Submit');
+                formData.append('CurrentIndex', '@Model.CurrentIndex');
+
+                // Add selected answer (last question)
+                if ('@Model.CurrentQuestion.Type' === 'single' || '@Model.CurrentQuestion.Type' === 'text') {
+                    formData.append('SelectedAnswer', document.querySelector('input[name="SelectedAnswer"]')?.value || '');
+                } else if ('@Model.CurrentQuestion.Type' === 'multi') {
+                    document.querySelectorAll('input[name="SelectedMulti"]:checked').forEach(cb => {
+                        formData.append('SelectedMulti', cb.value);
+                    });
+                }
+
+                // Add anti-forgery token manually if possible
+                const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+                if (tokenInput) {
+                    formData.append('__RequestVerificationToken', tokenInput.value);
+                }
+
+                submitInProgress = true;
+
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    console.log("Server responded with:", response.status);
+                    if (response.redirected) {
+                        console.log("Redirecting to:", response.url);
+                        window.location.href = response.url;
+                    } else if (response.ok) {
+                        window.location.href = '/Naplan/Results';
+                    } else {
+                        response.text().then(text => {
+                            console.error("Server error response:", text);
+                            //alert("Submission failed (status " + response.status + "). Going to results manually.");
+                            window.location.href = '/Naplan/Results';
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error("Fetch failed:", err);
+                    window.location.href = '/Naplan/Results';
+                });
+            }
+
+            function updateTimer() {
+                if (isTimeUp || submitInProgress) return;
+
+                const now = Date.now();
+                const elapsedSeconds = Math.floor((now - startMillis) / 1000);
+
+                elapsedDisplay.textContent = `Elapsed: ${formatTime(elapsedSeconds)}`;
+
+                if (hasTimeLimit) {
+                    const remaining = totalSeconds - elapsedSeconds;
+                    remainingDisplay.textContent = `Remaining: ${formatTime(Math.max(remaining, 0))}`;
+                    remainingDisplay.style.color = remaining < 60 ? '#dc3545' : '#198754';
+
+                    if (remaining <= 0) {
+                        isTimeUp = true;
+                        showTimeUp();
+                    }
+                }
+            }
+
+            // Start timer
+            updateTimer();
+            const timerInterval = setInterval(updateTimer, 1000);
+
+            // View Results button
+            viewResultsBtn?.addEventListener('click', () => {
+                window.location.href = '/Naplan/Results';
+            });
+        });
+    </script>
+}

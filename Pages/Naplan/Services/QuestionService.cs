@@ -5,7 +5,7 @@ namespace HomeHubApp.Pages.Naplan.Services;
 
 public class QuestionService : IQuestionService
 {
-    private readonly List<Question> _questions = new();
+    private readonly TestConfig _config = new();
 
     public QuestionService(IWebHostEnvironment environment)
     {
@@ -21,17 +21,26 @@ public class QuestionService : IQuestionService
 
             var json = File.ReadAllText(filePath);
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            _questions = JsonSerializer.Deserialize<List<Question>>(json, options) ?? new List<Question>();
+
+            // Try to deserialize as new object format first
+            var tempConfig = JsonSerializer.Deserialize<TestConfig>(json, options);
+            if (tempConfig?.Questions?.Any() == true)
+            {
+                _config = tempConfig;
+            }
+            else
+            {
+                // Fallback: old array format
+                var questions = JsonSerializer.Deserialize<List<Question>>(json, options) ?? new();
+                _config.Questions = questions;
+                _config.TotalTimeSeconds = null;
+            }
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading naplan-questions.json: {ex.Message}");
-            // Fallback to empty list – site still runs
         }
     }
 
-    public List<Question> GetQuestions()
-    {
-        return _questions;
-    }
+    public TestConfig GetTestConfig() => _config;
 }

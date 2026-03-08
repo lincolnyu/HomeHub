@@ -20,7 +20,8 @@ public class ResultsModel : PageModel
 
     public void OnGet()
     {
-        var questions = _service.GetQuestions();
+        var testConfig = _service.GetTestConfig();
+        var questions = testConfig.Questions;
         Total = questions.Count;
         if (Total == 0) return;
 

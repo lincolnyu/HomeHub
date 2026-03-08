@@ -25,15 +25,54 @@ public class TestModel : PageModel
     public Question CurrentQuestion { get; private set; } = new();
     public int TotalQuestions { get; private set; }
 
+    // Add these properties
+    public int? TotalTimeSeconds { get; private set; }
+    public string? StartTimeUtcIso { get; private set; }
+    public long ServerElapsedSeconds { get; private set; }
+
     public void OnGet(int index = 0)
     {
-        LoadQuestionsAndSetCurrent(index);
+        // If starting at question 0 → treat as fresh attempt (from home or Try Again)
+        if (index == 0)
+        {
+            // Clear previous timer and answers
+            HttpContext.Session.Remove("TestStartUtcIso");
+            HttpContext.Session.Remove("UserAnswers");
+
+            // Optional: signal to JS to also clear localStorage
+            ViewData["ForceReset"] = true;
+        }
+
+        LoadTestConfigAndSetCurrent(index);
+
+        // Determine or create start time (only after possible clear)
+        StartTimeUtcIso = HttpContext.Session.GetString("TestStartUtcIso");
+
+        if (string.IsNullOrEmpty(StartTimeUtcIso))
+        {
+            StartTimeUtcIso = DateTime.UtcNow.ToString("o");
+            HttpContext.Session.SetString("TestStartUtcIso", StartTimeUtcIso);
+        }
+
+        if (DateTime.TryParse(StartTimeUtcIso, null, System.Globalization.DateTimeStyles.RoundtripKind, out var startUtc))
+        {
+            ServerElapsedSeconds = (long)(DateTime.UtcNow - startUtc).TotalSeconds;
+        }
+        else
+        {
+            ServerElapsedSeconds = 0;
+        }
+
         PopulateSelectedAnswersFromSession();
+
+        // Pass to view
+        ViewData["StartTimeUtcIso"] = StartTimeUtcIso;
+        ViewData["TotalTimeSeconds"] = TotalTimeSeconds ?? 0;
     }
 
     public IActionResult OnPostNext()
     {
-        LoadQuestionsAndSetCurrent();
+        LoadTestConfigAndSetCurrent();
         SaveCurrentAnswer();
         var nextIndex = Math.Min(CurrentIndex + 1, TotalQuestions - 1);
         return RedirectToPage(new { index = nextIndex });
@@ -41,7 +80,7 @@ public class TestModel : PageModel
 
     public IActionResult OnPostPrev()
     {
-        LoadQuestionsAndSetCurrent();
+        LoadTestConfigAndSetCurrent();
         SaveCurrentAnswer();
         var prevIndex = Math.Max(CurrentIndex - 1, 0);
         return RedirectToPage(new { index = prevIndex });
@@ -49,24 +88,38 @@ public class TestModel : PageModel
 
     public IActionResult OnPostSubmit()
     {
-        LoadQuestionsAndSetCurrent();
+        LoadTestConfigAndSetCurrent();
         SaveCurrentAnswer();
         return RedirectToPage("Results");
+    }
+
+    // Optional: new handler to restore state from client (called by JS if needed)
+    public IActionResult OnPostRestoreState(string answersJson, string startTimeIso)
+    {
+        if (!string.IsNullOrEmpty(answersJson))
+        {
+            HttpContext.Session.SetString("UserAnswers", answersJson);
+        }
+        if (!string.IsNullOrEmpty(startTimeIso))
+        {
+            HttpContext.Session.SetString("TestStartUtcIso", startTimeIso);
+        }
+        return new EmptyResult();
     }
 
     // ────────────────────────────────────────────────
     // Core loading logic – always sets CurrentQuestion
     // ────────────────────────────────────────────────
-    private void LoadQuestionsAndSetCurrent(int? requestedIndex = null)
+    private void LoadTestConfigAndSetCurrent(int? requestedIndex = null)
     {
-        Questions = _service.GetQuestions() ?? new List<Question>();
+        var config = _service.GetTestConfig();
+        Questions = config.Questions ?? new List<Question>();
+        TotalTimeSeconds = config.TotalTimeSeconds;
         TotalQuestions = Questions.Count;
 
-        // Determine final index
-        var targetIndex = requestedIndex ?? CurrentIndex;
+        int targetIndex = requestedIndex ?? CurrentIndex;
         CurrentIndex = TotalQuestions == 0 ? 0 : Math.Clamp(targetIndex, 0, TotalQuestions - 1);
 
-        // Set current question (safe even when no questions)
         CurrentQuestion = TotalQuestions > 0
             ? Questions[CurrentIndex]
             : new Question { Content = "No questions loaded. Please add naplan-questions.json" };
