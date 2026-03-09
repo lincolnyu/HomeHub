@@ -1,0 +1,156 @@
+{
+  "totalTimeSeconds": 1200,
+  "questions": [
+    {
+      "id": 1,
+      "title": "Reading Text 1: Koalas – Fascinating Australian Animals",
+      "content": "Koalas are unique animals found only in Australia. They are marsupials, which means they carry their babies in a pouch. Koalas spend most of their time in eucalyptus trees, eating leaves. These leaves are tough and not very nutritious, so koalas sleep up to 20 hours a day to save energy. A baby koala, called a joey, stays in its mother's pouch for about six months. After that, it rides on her back until it's ready to be on its own. Koalas have sharp claws for climbing and soft fur that is grey or brown. Sadly, koalas are vulnerable because of habitat loss from bushfires and land clearing. People are working to protect them by planting more trees and creating safe areas.",
+      "type": "none"
+    },
+    {
+      "id": 2,
+      "parent": 1,
+      "title": "Reading Text 1: Koalas – Fascinating Australian Animals",
+      "content": "What type of animal is a koala?",
+      "type": "single",
+      "options": ["A bird", "A marsupial", "A fish", "A reptile"],
+      "correctAnswers": ["A marsupial"]
+    },
+    {
+      "id": 3,
+      "parent": 1,
+      "title": "Reading Text 1: Koalas – Fascinating Australian Animals",
+      "content": "Why do koalas sleep so much?",
+      "type": "single",
+      "options": ["They are lazy", "To save energy because their food is not nutritious", "They are nocturnal", "To avoid predators"],
+      "correctAnswers": ["To save energy because their food is not nutritious"]
+    },
+    {
+      "id": 4,
+      "parent": 1,
+      "title": "Reading Text 1: Koalas – Fascinating Australian Animals",
+      "content": "What is a baby koala called?",
+      "type": "text",
+      "correctAnswers": ["joey"]
+    },
+    {
+      "id": 5,
+      "parent": 1,
+      "title": "Reading Text 1: Koalas – Fascinating Australian Animals",
+      "content": "The word 'vulnerable' in the text most likely means —",
+      "type": "single",
+      "options": ["Strong and safe", "At risk of harm", "Very fast", "Friendly"],
+      "correctAnswers": ["At risk of harm"]
+    },
+    {
+      "id": 6,
+      "parent": 1,
+      "title": "Reading Text 1: Koalas – Fascinating Australian Animals",
+      "content": "How are people helping koalas?",
+      "type": "single",
+      "options": ["By cutting down trees", "By planting more trees and creating safe areas", "By moving them to cities", "By feeding them meat"],
+      "correctAnswers": ["By planting more trees and creating safe areas"]
+    },
+    {
+      "id": 7,
+      "title": "Reading Text 2: The Lost Treasure Hunt",
+      "content": "Mia and her brother Alex were exploring their grandparents' attic on a rainy day. 'Look at this old map!' Mia exclaimed, holding up a dusty paper with strange symbols. 'It looks like a treasure map,' Alex said excitedly. The map showed a path through the nearby forest to a hidden cave. They decided to follow it, grabbing torches and snacks. In the forest, they crossed a stream and climbed a hill. Suddenly, they heard rustling in the bushes. It was just a rabbit! Finally, they reached the cave. Inside, they found an old chest filled with shiny coins and jewels. But the real treasure was a note from their great-grandfather: 'The best adventures are shared with family.' Mia and Alex smiled, knowing they had found something special.",
+      "type": "none"
+    },
+    {
+      "id": 8,
+      "parent": 7,
+      "title": "Reading Text 2: The Lost Treasure Hunt",
+      "content": "Where did Mia and Alex find the map?",
+      "type": "single",
+      "options": ["In the forest", "In their grandparents' attic", "At school", "In a cave"],
+      "correctAnswers": ["In their grandparents' attic"]
+    },
+    {
+      "id": 9,
+      "parent": 7,
+      "title": "Reading Text 2: The Lost Treasure Hunt",
+      "content": "What did they hear in the bushes?",
+      "type": "single",
+      "options": ["A treasure", "A rabbit", "Their grandparents", "Rain"],
+      "correctAnswers": ["A rabbit"]
+    },
+    {
+      "id": 10,
+      "parent": 7,
+      "title": "Reading Text 2: The Lost Treasure Hunt",
+      "content": "What was the real treasure according to the note?",
+      "type": "single",
+      "options": ["Coins and jewels", "The map", "Adventures shared with family", "The cave"],
+      "correctAnswers": ["Adventures shared with family"]
+    },
+    {
+      "id": 11,
+      "parent": 7,
+      "title": "Reading Text 2: The Lost Treasure Hunt",
+      "content": "The word 'exclaimed' means —",
+      "type": "single",
+      "options": ["Said quietly", "Said with excitement", "Whispered", "Thought"],
+      "correctAnswers": ["Said with excitement"]
+    },
+    {
+      "id": 12,
+      "parent": 7,
+      "title": "Reading Text 2: The Lost Treasure Hunt",
+      "content": "Why did Mia and Alex go on the adventure?",
+      "type": "single",
+      "options": ["It was sunny", "They found a map and wanted to find treasure", "They were bored at school", "Their grandparents told them to"],
+      "correctAnswers": ["They found a map and wanted to find treasure"]
+    },
+    {
+      "id": 13,
+      "title": "Reading Text 3: Why We Should Recycle",
+      "content": "Recycling is important for our planet. Every day, we throw away things like plastic bottles, paper, and cans. If we don't recycle, these items go to landfills where they take hundreds of years to break down. This harms the environment and animals. By recycling, we save resources like trees for paper and oil for plastic. It also reduces pollution from making new products. For example, recycling one tonne of paper saves 17 trees! At home, you can sort your rubbish into bins for recycling. Schools can have recycling programs too. If everyone recycles, we can make the Earth cleaner and healthier for future generations. Start recycling today – it's easy and makes a big difference!",
+      "type": "none"
+    },
+    {
+      "id": 14,
+      "parent": 13,
+      "title": "Reading Text 3: Why We Should Recycle",
+      "content": "What happens if we don't recycle?",
+      "type": "single",
+      "options": ["Items disappear quickly", "They go to landfills and harm the environment", "We get more trees", "Pollution decreases"],
+      "correctAnswers": ["They go to landfills and harm the environment"]
+    },
+    {
+      "id": 15,
+      "parent": 13,
+      "title": "Reading Text 3: Why We Should Recycle",
+      "content": "Recycling one tonne of paper saves how many trees?",
+      "type": "text",
+      "correctAnswers": ["17"]
+    },
+    {
+      "id": 16,
+      "parent": 13,
+      "title": "Reading Text 3: Why We Should Recycle",
+      "content": "The main purpose of this text is to —",
+      "type": "single",
+      "options": ["Tell a story", "Explain how to make paper", "Persuade people to recycle", "Describe animals"],
+      "correctAnswers": ["Persuade people to recycle"]
+    },
+    {
+      "id": 17,
+      "parent": 13,
+      "title": "Reading Text 3: Why We Should Recycle",
+      "content": "The word 'resources' in the text means —",
+      "type": "single",
+      "options": ["Things we throw away", "Natural materials like trees and oil", "Pollution", "Bins"],
+      "correctAnswers": ["Natural materials like trees and oil"]
+    },
+    {
+      "id": 18,
+      "parent": 13,
+      "title": "Reading Text 3: Why We Should Recycle",
+      "content": "What can schools do to help?",
+      "type": "single",
+      "options": ["Throw away more rubbish", "Have recycling programs", "Cut down trees", "Make more pollution"],
+      "correctAnswers": ["Have recycling programs"]
+    }
+  ]
+}

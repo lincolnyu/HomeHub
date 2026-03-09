@@ -5,16 +5,16 @@ namespace HomeHubApp.Pages.Naplan.Services;
 
 public class QuestionService : IQuestionService
 {
-    private readonly IWebHostEnvironment _environment;
+    public IWebHostEnvironment Environment { get; }
 
     public QuestionService(IWebHostEnvironment environment)
     {
-        _environment = environment;
+        Environment = environment;
     }
 
     public List<string> GetAllTestFilePaths()
     {
-        var dir = Path.Combine(_environment.WebRootPath, "data", "naplan");
+        var dir = Path.Combine(Environment.WebRootPath, "data", "naplan", "input");
 
         if (!Directory.Exists(dir))
         {

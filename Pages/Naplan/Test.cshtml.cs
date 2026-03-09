@@ -1,8 +1,9 @@
-﻿using System.Text.Json;
-using HomeHubApp.Pages.Naplan.Models;
+﻿using HomeHubApp.Pages.Naplan.Models;
 using HomeHubApp.Pages.Naplan.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.Text;
+using System.Text.Json;
 
 namespace HomeHubApp.Pages.Naplan;
 
@@ -129,6 +130,10 @@ public class TestModel : PageModel
     {
         LoadTestConfigAndSetCurrent();
         SaveCurrentAnswer();
+
+        // NEW: Generate report in background
+        _ = GenerateMarkdownReportAsync();  // fire-and-forget
+
         return RedirectToPage("Results");
     }
 
@@ -291,5 +296,168 @@ public class TestModel : PageModel
     private void SaveUserAnswers(List<string> answers)
     {
         HttpContext.Session.SetString(UserAnswersSessionKey, JsonSerializer.Serialize(answers));
+    }
+
+    private async Task GenerateMarkdownReportAsync()
+    {
+        // Get the current test file path from session
+        var testFilePath = HttpContext.Session.GetString(TestFileSessionKey);
+        if (string.IsNullOrEmpty(testFilePath))
+            return; // no test file → skip
+
+        var config = _service.LoadConfig(testFilePath);
+        if (config == null || !config.Questions.Any())
+            return;
+
+        // Base filename without extension
+        var baseName = Path.GetFileNameWithoutExtension(testFilePath);
+
+        // Timestamp: yyyyMMddHHmm
+        var now = DateTime.Now;
+        var timestamp = now.ToString("yyyyMMddHHmm");
+
+        var fileName = $"{baseName}-{timestamp}.md";
+        var outputDir = Path.Combine(_service.Environment.WebRootPath, "data", "naplan", "output");
+
+        // Ensure output directory exists
+        Directory.CreateDirectory(outputDir);
+
+        var fullPath = Path.Combine(outputDir, fileName);
+
+        // Load user answers
+        var userAnswersJson = HttpContext.Session.GetString(UserAnswersSessionKey);
+        var userAnswers = string.IsNullOrEmpty(userAnswersJson)
+            ? new List<string>()
+            : JsonSerializer.Deserialize<List<string>>(userAnswersJson) ?? new List<string>();
+
+        // Calculate score & percentage (same logic as ResultsModel)
+        int score = 0;
+        int totalReal = 0;
+
+        var sb = new StringBuilder();
+
+        sb.AppendLine($"# NAPLAN Practice Test Report\n");
+        sb.AppendLine($"**Test File**: {Path.GetFileName(testFilePath)}");
+        sb.AppendLine($"**Completed**: {now:yyyy-MM-dd HH:mm} AEDT");
+        sb.AppendLine();
+        int scoreInsertPoint = sb.Length;
+        sb.AppendLine();
+
+        sb.AppendLine("## Detailed Answers\n");
+
+
+        Dictionary<int, int> parentIdToHrefInt = [];
+        int nextHrefInt = 1;
+        int questionNumber = 0;
+        for (int i = 0; i < config.Questions.Count; i++)
+        {
+            var q = config.Questions[i];
+
+            // Skip informational pages
+            if (string.IsNullOrEmpty(q.Type) || q.Type == "none")
+                continue;
+
+            questionNumber++;
+            totalReal++;
+
+            var userAns = i < userAnswers.Count ? userAnswers[i] : "(no answer)";
+            bool isCorrect = false;
+
+            if (q.Type == "multi")
+            {
+                var userList = string.IsNullOrEmpty(userAns)
+                    ? new List<string>()
+                    : userAns.Split(',')
+                             .Select(x => x.Trim())
+                             .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                             .ToList();
+
+                var correctList = q.CorrectAnswers
+                                   .Select(x => x.Trim())
+                                   .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                                   .ToList();
+
+                isCorrect = userList.SequenceEqual(correctList, StringComparer.OrdinalIgnoreCase);
+            }
+            else
+            {
+                isCorrect = q.CorrectAnswers.Any(c =>
+                    string.Equals(userAns.Trim(), c.Trim(), StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (isCorrect) score++;
+
+            sb.AppendLine($"### Question {questionNumber}");
+            sb.AppendLine($"**Question**: {q.Content}\n");
+
+            // Show original article (parent content) if this is a child question
+            if (q.ParentId.HasValue)
+            {
+                var parent = config.Questions.FirstOrDefault(p => p.Id == q.ParentId);
+                if (parent != null && !string.IsNullOrEmpty(parent.Content))
+                {
+                    if (!parentIdToHrefInt.TryGetValue(parent.Id, out var hrefInt))
+                    {
+                        hrefInt = nextHrefInt++;
+                        sb.AppendLine($"<a id=\"article{hrefInt}\"></a>");
+                        sb.AppendLine("**Original Article**:");
+                        sb.AppendLine("```");
+                        sb.AppendLine(parent.Content.Trim());
+                        sb.AppendLine("```\n");
+                        parentIdToHrefInt.Add(parent.Id, hrefInt);
+                    }
+                    else
+                    {
+                        sb.AppendLine($"[**Original Article**](#article{hrefInt})\n");
+                    }
+                }
+            }
+
+            sb.AppendLine($"**Your answer**: {userAns}");
+            sb.AppendLine($"**Correct answer{(q.CorrectAnswers.Count > 1 ? "s" : "")}**: {string.Join(", ", q.CorrectAnswers)}");
+            sb.AppendLine($"**Result**: {(isCorrect ? "Correct ✅" : "Incorrect ❌")}\n");
+        }
+
+        // Summary at top (moved here so we can calculate score first)
+        var percentage = totalReal > 0 ? (double)score / totalReal * 100 : 0;
+        var timeUsed = "—";
+        var timeAllowed = "";
+
+        var startIso = HttpContext.Session.GetString(TestStartSessoinKey);
+        if (!string.IsNullOrEmpty(startIso) &&
+            DateTime.TryParse(startIso, null, System.Globalization.DateTimeStyles.RoundtripKind, out var startUtc))
+        {
+            var elapsedSec = (long)(DateTime.UtcNow - startUtc).TotalSeconds;
+            if (config?.TotalTimeSeconds > 0)
+                elapsedSec = Math.Min(elapsedSec, config.TotalTimeSeconds.Value);
+
+            var min = elapsedSec / 60;
+            var sec = elapsedSec % 60;
+            timeUsed = $"{min:D2}:{sec:D2}";
+
+            if (config?.TotalTimeSeconds > 0)
+            {
+                var aMin = config.TotalTimeSeconds.Value / 60;
+                var aSec = config.TotalTimeSeconds.Value % 60;
+                timeAllowed = $" (out of {aMin:D2}:{aSec:D2} allowed)";
+            }
+        }
+
+        var summary = $@"**Score**: {score} / {totalReal} ({percentage:F0}%)  
+**Time Used**: {timeUsed}{timeAllowed}";
+
+        // Insert summary right after header
+        sb.Insert(scoreInsertPoint, summary + "\n");
+
+        // Write file
+        try
+        {
+            await System.IO.File.WriteAllTextAsync(fullPath, sb.ToString());
+            Console.WriteLine($"Report generated: {fullPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Failed to write report {fileName}: {ex.Message}");
+        }
     }
 }
