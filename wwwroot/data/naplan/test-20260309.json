@@ -1,0 +1,335 @@
+{
+    "totalTimeSeconds": 1800,
+    "questions": [
+        {
+            "id": 1,
+            "title": "Reading – Text 1: Helping Our Waterways",
+            "content": "Read the following information from posters about protecting waterways.\n\nPoster 1: What you do in your garden ends up in our waterways. Prevent run-off from fertilisers and pesticides. Apply carefully and only when the weather is fine. THE DRAIN IS JUST FOR RAIN\n\nPoster 2: What you do in your garden ends up in our waterways. Leaves and clippings remove oxygen from water, killing aquatic life. Keep garden waste out of the gutter. Compost or mulch it. THE DRAIN IS JUST FOR RAIN",
+            "type": "none"
+        },
+        {
+            "id": 2,
+            "parentId": 1,
+            "title": "Reading – Text 1: Helping Our Waterways",
+            "content": "What is the main message of both posters?",
+            "type": "single",
+            "options": [
+                "Gardens should have no plants",
+                "Garden chemicals and waste can harm waterways",
+                "Rain is bad for gardens",
+                "Only use drains for leaves"
+            ],
+            "correctAnswers": [
+                "Garden chemicals and waste can harm waterways"
+            ]
+        },
+        {
+            "id": 3,
+            "parentId": 1,
+            "title": "Reading – Text 1: Helping Our Waterways",
+            "content": "The phrase 'THE DRAIN IS JUST FOR RAIN' is written in capital letters to —",
+            "type": "single",
+            "options": [
+                "make it look pretty",
+                "show it is the most important message",
+                "hide the meaning",
+                "make people ignore it"
+            ],
+            "correctAnswers": [
+                "show it is the most important message"
+            ]
+        },
+        {
+            "id": 4,
+            "parentId": 1,
+            "title": "Reading – Text 1: Helping Our Waterways",
+            "content": "According to Poster 2, why should you not put leaves in the gutter?",
+            "type": "single",
+            "options": [
+                "They look ugly",
+                "They remove oxygen from water and kill aquatic life",
+                "They make the water smell nice",
+                "They help fish swim faster"
+            ],
+            "correctAnswers": [
+                "They remove oxygen from water and kill aquatic life"
+            ]
+        },
+        {
+            "id": 5,
+            "parentId": 1,
+            "title": "Reading – Text 1: Helping Our Waterways",
+            "content": "The best alternative to putting garden waste in the gutter is to —",
+            "type": "single",
+            "options": [
+                "throw it in the bin",
+                "compost or mulch it",
+                "leave it on the lawn forever",
+                "burn it"
+            ],
+            "correctAnswers": [
+                "compost or mulch it"
+            ]
+        },
+        {
+            "id": 6,
+            "title": "Reading – Text 2: How to Play SPUD",
+            "content": "SPUD is a fun ball game for five or more players.\nYou need: a soft rubber ball and a clear outdoor space.\nAim: To be the last player left in the game.\nHow to play:\n1. One player is chosen to be It.\n2. It throws the ball high in the air and yells a player's name.\n3. That player must catch the ball. Everyone else runs away.\n4. It yells 'SPUD!' as soon as It gets the ball. Everyone else has to freeze.\n5. Then It takes three giant steps towards another player, and throws the ball at that player’s feet. The other player must not move.\n6. If It hits the player, or the player moves, that player gets a letter (starting with S) and becomes It. If It misses, It gets a letter.\n7. Letters spell S-P-U-D. The first to spell SPUD is out. Last player left wins.",
+            "type": "none"
+        },
+        {
+            "id": 7,
+            "parentId": 6,
+            "title": "Reading – Text 2: How to Play SPUD",
+            "content": "What must happen right after It gets the ball back?",
+            "type": "single",
+            "options": [
+                "Everyone keeps running",
+                "It yells 'SPUD!'",
+                "The game ends",
+                "Players sit down"
+            ],
+            "correctAnswers": [
+                "It yells 'SPUD!'"
+            ]
+        },
+        {
+            "id": 8,
+            "parentId": 6,
+            "title": "Reading – Text 2: How to Play SPUD",
+            "content": "Why do players have to freeze when 'SPUD!' is called?",
+            "type": "single",
+            "options": [
+                "To make the game harder for It",
+                "So It can aim and throw at their feet",
+                "To rest for a minute",
+                "To spell the word faster"
+            ],
+            "correctAnswers": [
+                "So It can aim and throw at their feet"
+            ]
+        },
+        {
+            "id": 9,
+            "parentId": 6,
+            "title": "Reading – Text 2: How to Play SPUD",
+            "content": "If a player is hit by the ball and does not move, what happens next?",
+            "type": "single",
+            "options": [
+                "They win the game",
+                "They get a letter and become It",
+                "They get to throw next",
+                "The game stops"
+            ],
+            "correctAnswers": [
+                "They get a letter and become It"
+            ]
+        },
+        {
+            "id": 10,
+            "parentId": 6,
+            "title": "Reading – Text 2: How to Play SPUD",
+            "content": "The word 'giant' in 'three giant steps' most likely means —",
+            "type": "single",
+            "options": [
+                "very small",
+                "very big",
+                "very fast",
+                "very slow"
+            ],
+            "correctAnswers": [
+                "very big"
+            ]
+        },
+        {
+            "id": 11,
+            "title": "Reading – Text 3: The Outsider (short narrative extract)",
+            "content": "On an Arctic island long ago, a stranger is approaching a village.\n\n'Papa,' I yell. 'Someone is coming.'\n\nMy father looks up from fixing the sled. His face tightens. Strangers are rare here. They usually bring news — or trouble.\n\nThe figure wears thick furs and moves slowly across the ice. A dog pulls a small sled behind. As he gets closer, I see his face is covered in frost. He raises a hand in greeting.\n\nPapa steps forward. 'Who are you, traveller? What brings you to our village?'\n\nThe stranger pulls down his hood. 'I am Kael from the eastern coast. My people are hungry. The seals have gone. I seek trade… or help.'\n\nPapa looks at me, then back at Kael. 'Come inside. Warm yourself. We will talk.'",
+            "type": "none"
+        },
+        {
+            "id": 12,
+            "parentId": 11,
+            "title": "Reading – Text 3: The Outsider (short narrative extract)",
+            "content": "Where is the story set?",
+            "type": "single",
+            "options": [
+                "A hot desert",
+                "An Arctic island",
+                "A big city",
+                "A rainforest"
+            ],
+            "correctAnswers": [
+                "An Arctic island"
+            ]
+        },
+        {
+            "id": 13,
+            "parentId": 11,
+            "title": "Reading – Text 3: The Outsider (short narrative extract)",
+            "content": "How does the narrator feel when they first see the stranger?",
+            "type": "single",
+            "options": [
+                "Excited and happy",
+                "Curious but not scared",
+                "Worried and alert",
+                "Bored"
+            ],
+            "correctAnswers": [
+                "Curious but not scared"
+            ]
+        },
+        {
+            "id": 14,
+            "parentId": 11,
+            "title": "Reading – Text 3: The Outsider (short narrative extract)",
+            "content": "Why has Kael come to the village?",
+            "type": "single",
+            "options": [
+                "To start a fight",
+                "Because his people are hungry and need help or trade",
+                "To sell furs",
+                "To show off his dog"
+            ],
+            "correctAnswers": [
+                "Because his people are hungry and need help or trade"
+            ]
+        },
+        {
+            "id": 15,
+            "parentId": 11,
+            "title": "Reading – Text 3: The Outsider (short narrative extract)",
+            "content": "What does Papa's face tightening most likely show?",
+            "type": "single",
+            "options": [
+                "He is happy",
+                "He is cautious or worried",
+                "He is sleepy",
+                "He is hungry"
+            ],
+            "correctAnswers": [
+                "He is cautious or worried"
+            ]
+        },
+        {
+            "id": 16,
+            "parentId": 11,
+            "title": "Reading – Text 3: The Outsider (short narrative extract)",
+            "content": "The word 'tightens' in the story means —",
+            "type": "single",
+            "options": [
+                "becomes loose",
+                "becomes stiff or tense",
+                "smiles widely",
+                "turns red"
+            ],
+            "correctAnswers": [
+                "becomes stiff or tense"
+            ]
+        },
+        {
+            "id": 17,
+            "parentId": 11,
+            "title": "Reading – Text 3: The Outsider (short narrative extract)",
+            "content": "What does Papa do to show he is willing to listen?",
+            "type": "single",
+            "options": [
+                "Shuts the door",
+                "Invites Kael inside to warm up and talk",
+                "Throws snow at him",
+                "Runs away"
+            ],
+            "correctAnswers": [
+                "Invites Kael inside to warm up and talk"
+            ]
+        },
+        {
+            "id": 18,
+            "parentId": 11,
+            "title": "Reading – Text 3: The Outsider (short narrative extract)",
+            "content": "Fill in the blank: The stranger pulls down his _____ to show his face.",
+            "type": "text",
+            "correctAnswers": [
+                "hood"
+            ]
+        },
+        {
+            "id": 19,
+            "title": "Reading – Mixed Questions (Vocabulary & Inference)",
+            "content": "(These questions relate to any of the previous texts)",
+            "type": "none"
+        },
+        {
+            "id": 20,
+            "parentId": 19,
+            "title": "Reading – Mixed Questions (Vocabulary & Inference)",
+            "content": "What is the antonym of 'rare' as used in Text 3?",
+            "type": "single",
+            "options": [
+                "common",
+                "dangerous",
+                "cold",
+                "loud"
+            ],
+            "correctAnswers": [
+                "common"
+            ]
+        },
+        {
+            "id": 21,
+            "parentId": 19,
+            "title": "Reading – Mixed Questions (Vocabulary & Inference)",
+            "content": "In Text 1, 'run-off' most likely means —",
+            "type": "single",
+            "options": [
+                "running quickly",
+                "water carrying chemicals into drains",
+                "a race",
+                "turning off a tap"
+            ],
+            "correctAnswers": [
+                "water carrying chemicals into drains"
+            ]
+        },
+        {
+            "id": 22,
+            "parentId": 19,
+            "title": "Reading – Mixed Questions (Vocabulary & Inference)",
+            "content": "Which text tries to persuade people to change their behaviour?",
+            "type": "single",
+            "options": [
+                "Text 1 (posters)",
+                "Text 2 (game rules)",
+                "Text 3 (story)",
+                "None of them"
+            ],
+            "correctAnswers": [
+                "Text 1 (posters)"
+            ]
+        },
+        {
+            "id": 23,
+            "parentId": 19,
+            "title": "Reading – Mixed Questions (Vocabulary & Inference)",
+            "content": "In Text 2, what happens if It misses the throw?",
+            "type": "single",
+            "options": [
+                "It gets a letter",
+                "The other player gets a letter",
+                "Everyone cheers",
+                "Game restarts"
+            ],
+            "correctAnswers": [
+                "It gets a letter"
+            ]
+        },
+        {
+            "id": 20,
+            "content": "Fill in the blank with the correct word: Strangers are _____ here. (Text 3)",
+            "type": "text",
+            "correctAnswers": [
+                "rare"
+            ]
+        }
+    ]
+}
