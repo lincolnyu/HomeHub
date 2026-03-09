@@ -54,14 +54,6 @@
         <form method="post">
             <input type="hidden" asp-for="CurrentPageIndex"/>
 
-            @if (Model.ParentIndex.HasValue)
-            {
-                <a asp-page="./Test" asp-route-index="@Model.ParentIndex"
-                   class="btn btn-outline-info mb-3 d-block">
-                    ← Back to main article
-                </a>
-            }
-
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-primary text-white fs-4">
                     @Model.CurrentPage.Title
@@ -131,19 +123,33 @@
             </div>
 
             <!-- Navigation -->
-            <div class="d-flex justify-content-between align-items-center">
-                @if (Model.CurrentPageIndex > 0)
-                {
-                    <button type="submit" asp-page-handler="Prev"
-                            class="btn btn-outline-secondary btn-lg px-5">
-                        ← Previous
-                    </button>
-                }
-                else
-                {
-                    <div></div>
-                }
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <!-- Left side: Previous + Back to main article (when applicable) -->
+                <div class="d-flex align-items-center gap-3">
+                    @if (Model.CurrentPageIndex > 0)
+                    {
+                        <button type="submit" asp-page-handler="Prev"
+                                class="btn btn-outline-secondary btn-lg px-5">
+                            ← Previous
+                        </button>
+                    }
 
+                    @if (Model.ParentIndex.HasValue)
+                    {
+                        <a asp-page="./Test" asp-route-index="@Model.ParentIndex"
+                           class="btn btn-outline-info btn-lg px-5">
+                            ← Back to main article
+                        </a>
+                    }
+
+                    <!-- Spacer if neither Previous nor Back button exists -->
+                    @if (Model.CurrentPageIndex == 0 && !Model.ParentIndex.HasValue)
+                    {
+                        <div style="min-width: 160px;"></div>
+                    }
+                </div>
+
+                <!-- Right side: Next or Submit -->
                 @if (Model.CurrentPageIndex < Model.TotalPages - 1)
                 {
                     <button type="submit" asp-page-handler="Next"
