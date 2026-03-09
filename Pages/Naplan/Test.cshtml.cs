@@ -345,7 +345,6 @@ public class TestModel : PageModel
 
         sb.AppendLine("## Detailed Answers\n");
 
-
         Dictionary<int, int> parentIdToHrefInt = [];
         int nextHrefInt = 1;
         int questionNumber = 0;
@@ -358,32 +357,11 @@ public class TestModel : PageModel
                 continue;
 
             questionNumber++;
+
+            var userAns = totalReal < userAnswers.Count ? userAnswers[totalReal] : "";
             totalReal++;
 
-            var userAns = i < userAnswers.Count ? userAnswers[i] : "(no answer)";
-            bool isCorrect = false;
-
-            if (q.Type == "multi")
-            {
-                var userList = string.IsNullOrEmpty(userAns)
-                    ? new List<string>()
-                    : userAns.Split(',')
-                             .Select(x => x.Trim())
-                             .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-                             .ToList();
-
-                var correctList = q.CorrectAnswers
-                                   .Select(x => x.Trim())
-                                   .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-                                   .ToList();
-
-                isCorrect = userList.SequenceEqual(correctList, StringComparer.OrdinalIgnoreCase);
-            }
-            else
-            {
-                isCorrect = q.CorrectAnswers.Any(c =>
-                    string.Equals(userAns.Trim(), c.Trim(), StringComparison.OrdinalIgnoreCase));
-            }
+            bool isCorrect = ResultsModel.IfQuestionAnsweredCorrectly(q, userAns);
 
             if (isCorrect) score++;
 
@@ -413,9 +391,14 @@ public class TestModel : PageModel
                 }
             }
 
-            sb.AppendLine($"**Your answer**: {userAns}");
-            sb.AppendLine($"**Correct answer{(q.CorrectAnswers.Count > 1 ? "s" : "")}**: {string.Join(", ", q.CorrectAnswers)}");
-            sb.AppendLine($"**Result**: {(isCorrect ? "Correct ✅" : "Incorrect ❌")}\n");
+            var answerToDisplay = string.IsNullOrEmpty(userAns) ? "(no answer)" : userAns;
+            sb.AppendLine($"**Your answer**: {answerToDisplay}  ");
+            sb.AppendLine($"**Result**: {(isCorrect ? "Correct ✅" : "Incorrect ❌")}  ");
+            if (!isCorrect)
+            {
+                sb.AppendLine($"**Correct answer{(q.CorrectAnswers.Count > 1 ? "s" : "")}**: {string.Join(", ", q.CorrectAnswers)}");
+            }
+            sb.AppendLine();
         }
 
         // Summary at top (moved here so we can calculate score first)

@@ -15,7 +15,7 @@
                     <span class="text-muted">(Reading passage)</span>
                 }
             </span>
-            <span>@((Model.VisibleQuestionNumber * 100.0 / Math.Max(Model.VisibleQuestionCount, 1)))% complete</span>
+            <span>@(Math.Floor(Model.VisibleQuestionNumber * 100.0 / Math.Max(Model.VisibleQuestionCount, 1)))% complete</span>
         </div>
         <div class="progress" style="height: 25px;">
             <div class="progress-bar progress-bar-striped bg-success"

@@ -17,12 +17,12 @@ public class ResultsModel : PageModel
     public int Score { get; set; }
     public int Total { get; set; }
     public List<QuestionResult> QuestionResults { get; set; } = new();
-    public string TimeUsedDisplay { get; set; } = "—";
+    public string TimeUsedDisplay { get; set; } = "â€”";
     public string TimeAllowedDisplay { get; set; } = null; // null = no limit
 
     public void OnGet()
     {
-       // NEW: Retrieve the same test file that was used during the test
+        // NEW: Retrieve the same test file that was used during the test
         var testFilePath = HttpContext.Session.GetString(TestModel.TestFileSessionKey);
 
         TestConfig? config = null;
@@ -79,34 +79,38 @@ public class ResultsModel : PageModel
         {
             var q = realQuestions[i];
             var userAns = i < userAnswers.Count ? userAnswers[i] : "";
-            bool correct;
-
-            if (q.Type == "multi")
-            {
-                var userList = string.IsNullOrEmpty(userAns)
-                    ? new List<string>()
-                    : userAns.Split(',')
-                             .Select(x => x.Trim())
-                             .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-                             .ToList();
-
-                var correctList = q.CorrectAnswers
-                                   .Select(x => x.Trim())
-                                   .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
-                                   .ToList();
-
-                correct = userList.SequenceEqual(correctList, StringComparer.OrdinalIgnoreCase);
-            }
-            else // single or text
-            {
-                correct = q.CorrectAnswers.Any(c =>
-                    string.Equals(userAns.Trim(), c.Trim(), StringComparison.OrdinalIgnoreCase));
-            }
-
+            bool correct = IfQuestionAnsweredCorrectly(q, userAns);
+        
             if (correct) Score++;
 
             QuestionResults.Add(new QuestionResult(q, userAns, correct));
         }
+    }
+
+    public static bool IfQuestionAnsweredCorrectly(Question q, string userAns)
+    {
+        if (q.Type == "multi")
+        {
+            var userList = string.IsNullOrEmpty(userAns)
+                ? new List<string>()
+                : userAns.Split(',')
+                         .Select(x => x.Trim())
+                         .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                         .ToList();
+
+            var correctList = q.CorrectAnswers
+                               .Select(x => x.Trim())
+                               .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                               .ToList();
+
+            return userList.SequenceEqual(correctList, StringComparer.OrdinalIgnoreCase);
+        }
+        else // single or text
+        {
+            return q.CorrectAnswers.Any(c =>
+                string.Equals(userAns.Trim(), c.Trim(), StringComparison.OrdinalIgnoreCase));
+        }
+
     }
 
     public record QuestionResult(Question Question, string UserAnswer, bool IsCorrect);
