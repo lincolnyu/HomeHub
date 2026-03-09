@@ -41,6 +41,19 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        if (ctx.Context.Request.Path.StartsWithSegments("/data", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            ctx.Context.Response.Headers.Append("Content-Type", "text/plain");
+            ctx.Context.Response.WriteAsync("Directory access is not allowed.");
+        }
+    }
+});
+
 app.UseHttpsRedirection();
 
 app.UseRouting();
