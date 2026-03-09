@@ -173,17 +173,31 @@ public class TestModel : PageModel
         // ────────────────────────────────────────────────
         // NEW: Calculate visible (real) questions
         // ────────────────────────────────────────────────
-        var visibleQuestions = GetVisibleQuestions();
+        List<Question> visibleQuestions = GetVisibleQuestions();
 
         VisibleQuestionCount = visibleQuestions.Count;
 
-        // Visible number (1-based) – 0 if current is informational
-        VisibleQuestionNumber = visibleQuestions.IndexOf(CurrentPage) + 1;
-        if (VisibleQuestionNumber <= 0) VisibleQuestionNumber = 1; // fallback for informational
+        // Questions up to this page.
+        VisibleQuestionNumber = GetNumberOfQuestionsBeforeThisPage(visibleQuestions, CurrentPageIndex); 
+        
 
         // Parent index (flat list position)
         var parent = QuestionPages.FirstOrDefault(q => q.Id == CurrentPage.ParentId);
         ParentIndex = parent != null ? QuestionPages.IndexOf(parent) : null;
+    }
+
+    private int GetNumberOfQuestionsBeforeThisPage(List<Question> visibleQuestions, int pageIndex)
+    {
+        for(; pageIndex >= 0 ; pageIndex--)
+        {
+            var page = QuestionPages[pageIndex];
+            var visibleQuestionIndex = visibleQuestions.IndexOf(page);
+            if (visibleQuestionIndex >= 0)
+            {
+                return visibleQuestionIndex + 1;
+            }
+        }
+        return 0;
     }
 
     private void PopulateSelectedAnswersFromSession()
