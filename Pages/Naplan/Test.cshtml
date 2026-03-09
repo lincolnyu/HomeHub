@@ -8,12 +8,18 @@
     <!-- Progress -->
     <div class="mb-4">
         <div class="d-flex justify-content-between small text-muted mb-1">
-            <span>Question @(Model.CurrentIndex + 1) of @Model.TotalQuestions</span>
-            <span>@((Model.CurrentIndex + 1) * 100 / Model.TotalQuestions)% complete</span>
+            <span>
+                Question @Model.VisibleQuestionNumber of @Model.VisibleQuestionCount
+                @if (string.IsNullOrEmpty(Model.CurrentQuestion.Type) || Model.CurrentQuestion.Type == "none")
+                {
+                    <span class="text-muted">(Reading passage)</span>
+                }
+            </span>
+            <span>@((Model.VisibleQuestionNumber * 100.0 / Math.Max(Model.VisibleQuestionCount, 1)))% complete</span>
         </div>
         <div class="progress" style="height: 25px;">
             <div class="progress-bar progress-bar-striped bg-success"
-                 style="width: @((Model.CurrentIndex + 1.0) / Model.TotalQuestions * 100)%">
+                 style="width: @((Model.VisibleQuestionNumber * 100.0 / Math.Max(Model.VisibleQuestionCount, 1)))%">
             </div>
         </div>
     </div>
@@ -45,6 +51,14 @@
         <form method="post">
             <input type="hidden" asp-for="CurrentIndex"/>
 
+            @if (Model.ParentIndex.HasValue)
+            {
+                <a asp-page="./Test" asp-route-index="@Model.ParentIndex"
+                   class="btn btn-outline-info mb-3 d-block">
+                    ← Back to main article
+                </a>
+            }
+
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-primary text-white fs-4">
                     @Model.CurrentQuestion.Title
@@ -62,42 +76,54 @@
                         </div>
                     }
 
-                    <div class="mt-4">
-                        @if (Model.CurrentQuestion.Type == "single")
-                        {
-                            @for (var i = 0; i < Model.CurrentQuestion.Options.Count; i++)
+                    @if (string.IsNullOrEmpty(Model.CurrentQuestion.Type) || Model.CurrentQuestion.Type == "none")
+                    {
+                        <div class="alert alert-info mt-4 text-center">
+                            <strong>Reading passage / Information</strong><br>
+                            Please read the content above. No answer required on this page.
+                            <br><br>
+                            <small>Use Next to continue when ready.</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mt-4">
+                            @if (Model.CurrentQuestion.Type == "single")
                             {
-                                var opt = Model.CurrentQuestion.Options[i];
-                                <div class="form-check mb-3 p-3 border rounded bg-light">
-                                    <input class="form-check-input" type="radio"
-                                           id="opt_@i" name="SelectedAnswer" value="@opt"
-                                           checked="@(Model.SelectedAnswer == opt)">
-                                    <label class="form-check-label fs-4 w-100" for="opt_@i">
-                                        @opt
-                                    </label>
-                                </div>
+                                @for (var i = 0; i < Model.CurrentQuestion.Options.Count; i++)
+                                {
+                                    var opt = Model.CurrentQuestion.Options[i];
+                                    <div class="form-check mb-3 p-3 border rounded bg-light">
+                                        <input class="form-check-input" type="radio"
+                                               id="opt_@i" name="SelectedAnswer" value="@opt"
+                                               checked="@(Model.SelectedAnswer == opt)">
+                                        <label class="form-check-label fs-4 w-100" for="opt_@i">
+                                            @opt
+                                        </label>
+                                    </div>
+                                }
                             }
-                        }
-                        else if (Model.CurrentQuestion.Type == "multi")
-                        {
-                            @for (var i = 0; i < Model.CurrentQuestion.Options.Count; i++)
+                            else if (Model.CurrentQuestion.Type == "multi")
                             {
-                                var opt = Model.CurrentQuestion.Options[i];
-                                <div class="form-check mb-3 p-3 border rounded bg-light">
-                                    <input class="form-check-input" type="checkbox"
-                                           id="opt_@i" name="SelectedMulti" value="@opt"
-                                           checked="@(Model.SelectedMulti.Contains(opt))">
-                                    <label class="form-check-label fs-4 w-100" for="opt_@i">
-                                        @opt
-                                    </label>
-                                </div>
+                                @for (var i = 0; i < Model.CurrentQuestion.Options.Count; i++)
+                                {
+                                    var opt = Model.CurrentQuestion.Options[i];
+                                    <div class="form-check mb-3 p-3 border rounded bg-light">
+                                        <input class="form-check-input" type="checkbox"
+                                               id="opt_@i" name="SelectedMulti" value="@opt"
+                                               checked="@(Model.SelectedMulti.Contains(opt))">
+                                        <label class="form-check-label fs-4 w-100" for="opt_@i">
+                                            @opt
+                                        </label>
+                                    </div>
+                                }
                             }
-                        }
-                        else if (Model.CurrentQuestion.Type == "text")
-                        {
-                            <input type="text" asp-for="SelectedAnswer" class="form-control fs-3 p-3" placeholder="Type your answer here...">
-                        }
-                    </div>
+                            else if (Model.CurrentQuestion.Type == "text")
+                            {
+                                <input type="text" asp-for="SelectedAnswer" class="form-control fs-3 p-3" placeholder="Type your answer here...">
+                            }
+                        </div>
+                    }
                 </div>
             </div>
 

@@ -21,7 +21,12 @@ public class ResultsModel : PageModel
     public void OnGet()
     {
         var testConfig = _service.GetTestConfig();
-        var questions = testConfig.Questions;
+        var allQuestions = testConfig.Questions;
+        // Only count real questions
+        var questions = allQuestions
+            .Where(q => !string.IsNullOrEmpty(q.Type) && q.Type != "none")
+            .ToList();
+
         Total = questions.Count;
         if (Total == 0) return;
 

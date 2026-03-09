@@ -25,10 +25,13 @@ public class TestModel : PageModel
     public Question CurrentQuestion { get; private set; } = new();
     public int TotalQuestions { get; private set; }
 
-    // Add these properties
     public int? TotalTimeSeconds { get; private set; }
     public string? StartTimeUtcIso { get; private set; }
     public long ServerElapsedSeconds { get; private set; }
+
+    public int VisibleQuestionCount { get; private set; }
+    public int VisibleQuestionNumber { get; private set; }   // 1-based among real questions
+    public int? ParentIndex { get; private set; }            // flat index of parent if any
 
     public void OnGet(int index = 0)
     {
@@ -115,7 +118,7 @@ public class TestModel : PageModel
         var config = _service.GetTestConfig();
         Questions = config.Questions ?? new List<Question>();
         TotalTimeSeconds = config.TotalTimeSeconds;
-        TotalQuestions = Questions.Count;
+        TotalQuestions = Questions.Count;  // total pages (including informational)
 
         int targetIndex = requestedIndex ?? CurrentIndex;
         CurrentIndex = TotalQuestions == 0 ? 0 : Math.Clamp(targetIndex, 0, TotalQuestions - 1);
@@ -123,6 +126,23 @@ public class TestModel : PageModel
         CurrentQuestion = TotalQuestions > 0
             ? Questions[CurrentIndex]
             : new Question { Content = "No questions loaded. Please add naplan-questions.json" };
+
+        // ────────────────────────────────────────────────
+        // NEW: Calculate visible (real) questions
+        // ────────────────────────────────────────────────
+        var visibleQuestions = Questions
+            .Where(q => !string.IsNullOrEmpty(q.Type) && q.Type != "none")
+            .ToList();
+
+        VisibleQuestionCount = visibleQuestions.Count;
+
+        // Visible number (1-based) – 0 if current is informational
+        VisibleQuestionNumber = visibleQuestions.IndexOf(CurrentQuestion) + 1;
+        if (VisibleQuestionNumber <= 0) VisibleQuestionNumber = 1; // fallback for informational
+
+        // Parent index (flat list position)
+        var parent = Questions.FirstOrDefault(q => q.Id == CurrentQuestion.ParentId);
+        ParentIndex = parent != null ? Questions.IndexOf(parent) : null;
     }
 
     private void PopulateSelectedAnswersFromSession()
@@ -149,15 +169,16 @@ public class TestModel : PageModel
         var json = HttpContext.Session.GetString("UserAnswers");
         if (string.IsNullOrEmpty(json))
         {
-            var empty = Enumerable.Repeat("", TotalQuestions).ToList();
+            // NEW: only allocate slots for real questions
+            var empty = Enumerable.Repeat("", VisibleQuestionCount).ToList();
             SaveUserAnswers(empty);
             return empty;
         }
 
         var list = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
-        if (list.Count < TotalQuestions)
+        if (list.Count < VisibleQuestionCount)
         {
-            list.AddRange(Enumerable.Repeat("", TotalQuestions - list.Count));
+            list.AddRange(Enumerable.Repeat("", VisibleQuestionCount - list.Count));
             SaveUserAnswers(list);
         }
 
@@ -166,6 +187,10 @@ public class TestModel : PageModel
 
     private void SaveCurrentAnswer()
     {
+        // Skip if informational (no answer needed/saved)
+        if (string.IsNullOrEmpty(CurrentQuestion.Type) || CurrentQuestion.Type == "none")
+            return;
+
         var answers = GetOrInitUserAnswers();
         if (CurrentIndex >= answers.Count) return;
 
