@@ -48,7 +48,10 @@
     </div>
 
     <div class="text-center mt-5">
-        <a asp-page="Test" class="btn btn-primary btn-lg px-5">Try Again</a>
+        <a asp-page="Test" asp-route-index="0" asp-route-retry="true"
+           class="btn btn-primary btn-lg px-5">
+            Try Again
+        </a>
         <a asp-page="Index" class="btn btn-outline-secondary btn-lg px-5 ms-3">Back to Home</a>
     </div>
 </div>

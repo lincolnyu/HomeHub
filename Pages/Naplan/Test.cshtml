@@ -44,7 +44,10 @@
 
     @if (Model.TotalQuestions == 0)
     {
-        <div class="alert alert-warning">No questions found. Add wwwroot/data/naplan-questions.json</div>
+        <div class="alert alert-warning">
+            No test files found in <code>wwwroot/data/naplan</code><br>
+            (Files must start with 'test' and end with '.json')
+        </div>
     }
     else
     {

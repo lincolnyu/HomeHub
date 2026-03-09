@@ -4,5 +4,7 @@ namespace HomeHubApp.Pages.Naplan.Services;
 
 public interface IQuestionService
 {
-    TestConfig GetTestConfig();
+    List<string> GetAllTestFilePaths();
+
+    TestConfig? LoadConfig(string fullPath);
 }

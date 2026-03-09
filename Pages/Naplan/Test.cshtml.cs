@@ -10,6 +10,10 @@ public class TestModel : PageModel
 {
     private readonly IQuestionService _service;
 
+    public const string TestFileSessionKey = "CurrentTestFilePath";
+    public const string UserAnswersSessionKey = "UserAnswers";
+    public const string TestStartSessoinKey = "TestStartUtcIso";
+
     public TestModel(IQuestionService service)
     {
         _service = service;
@@ -35,12 +39,45 @@ public class TestModel : PageModel
 
     public void OnGet(int index = 0)
     {
-        // If starting at question 0 → treat as fresh attempt (from home or Try Again)
+        bool isRetry = HttpContext.Request.Query["retry"] == "true";
+
+        // ────────────────────────────────────────────────
+        // NEW: Decide whether to pick a new random test file
+        // ────────────────────────────────────────────────
+        if (index == 0 && !isRetry)
+        {
+            // True fresh start (from home) → force new random selection
+            HttpContext.Session.Remove(TestFileSessionKey);
+        }
+
+        // If no test file selected yet → choose one randomly
+        var selectedPath = HttpContext.Session.GetString(TestFileSessionKey);
+        if (string.IsNullOrEmpty(selectedPath))
+        {
+            var allFiles = _service.GetAllTestFilePaths();
+            if (allFiles.Any())
+            {
+                var rnd = new Random();
+                selectedPath = allFiles[rnd.Next(allFiles.Count)];
+                HttpContext.Session.SetString(TestFileSessionKey, selectedPath);
+
+                // Log to console (as requested)
+                Console.WriteLine($"[NAPLAN] Selected test file for this session: {Path.GetFileName(selectedPath)}");
+            }
+            else
+            {
+                Console.WriteLine("[NAPLAN] No test files found in wwwroot/data/naplan");
+            }
+        }
+
+        // ────────────────────────────────────────────────
+        // Fresh start cleanup (always clear answers & timer)
+        // ────────────────────────────────────────────────
         if (index == 0)
         {
             // Clear previous timer and answers
-            HttpContext.Session.Remove("TestStartUtcIso");
-            HttpContext.Session.Remove("UserAnswers");
+            HttpContext.Session.Remove(TestStartSessoinKey);
+            HttpContext.Session.Remove(UserAnswersSessionKey);
 
             // Optional: signal to JS to also clear localStorage
             ViewData["ForceReset"] = true;
@@ -49,12 +86,12 @@ public class TestModel : PageModel
         LoadTestConfigAndSetCurrent(index);
 
         // Determine or create start time (only after possible clear)
-        StartTimeUtcIso = HttpContext.Session.GetString("TestStartUtcIso");
+        StartTimeUtcIso = HttpContext.Session.GetString(TestStartSessoinKey);
 
         if (string.IsNullOrEmpty(StartTimeUtcIso))
         {
             StartTimeUtcIso = DateTime.UtcNow.ToString("o");
-            HttpContext.Session.SetString("TestStartUtcIso", StartTimeUtcIso);
+            HttpContext.Session.SetString(TestStartSessoinKey, StartTimeUtcIso);
         }
 
         if (DateTime.TryParse(StartTimeUtcIso, null, System.Globalization.DateTimeStyles.RoundtripKind, out var startUtc))
@@ -68,7 +105,6 @@ public class TestModel : PageModel
 
         PopulateSelectedAnswersFromSession();
 
-        // Pass to view
         ViewData["StartTimeUtcIso"] = StartTimeUtcIso;
         ViewData["TotalTimeSeconds"] = TotalTimeSeconds ?? 0;
     }
@@ -101,11 +137,11 @@ public class TestModel : PageModel
     {
         if (!string.IsNullOrEmpty(answersJson))
         {
-            HttpContext.Session.SetString("UserAnswers", answersJson);
+            HttpContext.Session.SetString(UserAnswersSessionKey, answersJson);
         }
         if (!string.IsNullOrEmpty(startTimeIso))
         {
-            HttpContext.Session.SetString("TestStartUtcIso", startTimeIso);
+            HttpContext.Session.SetString(TestStartSessoinKey, startTimeIso);
         }
         return new EmptyResult();
     }
@@ -115,17 +151,24 @@ public class TestModel : PageModel
     // ────────────────────────────────────────────────
     private void LoadTestConfigAndSetCurrent(int? requestedIndex = null)
     {
-        var config = _service.GetTestConfig();
-        Questions = config.Questions ?? new List<Question>();
-        TotalTimeSeconds = config.TotalTimeSeconds;
-        TotalQuestions = Questions.Count;  // total pages (including informational)
+        var path = HttpContext.Session.GetString(TestFileSessionKey);
+
+        TestConfig? config = null;
+        if (!string.IsNullOrEmpty(path))
+        {
+            config = _service.LoadConfig(path);
+        }
+
+        Questions = config?.Questions ?? new List<Question>();
+        TotalTimeSeconds = config?.TotalTimeSeconds;
+        TotalQuestions = Questions.Count;
 
         int targetIndex = requestedIndex ?? CurrentIndex;
         CurrentIndex = TotalQuestions == 0 ? 0 : Math.Clamp(targetIndex, 0, TotalQuestions - 1);
 
         CurrentQuestion = TotalQuestions > 0
             ? Questions[CurrentIndex]
-            : new Question { Content = "No questions loaded. Please add naplan-questions.json" };
+            : new Question { Content = "No test loaded. Check wwwroot/data/naplan folder." };
 
         // ────────────────────────────────────────────────
         // NEW: Calculate visible (real) questions
@@ -166,7 +209,7 @@ public class TestModel : PageModel
 
     private List<string> GetOrInitUserAnswers()
     {
-        var json = HttpContext.Session.GetString("UserAnswers");
+        var json = HttpContext.Session.GetString(UserAnswersSessionKey);
         if (string.IsNullOrEmpty(json))
         {
             // NEW: only allocate slots for real questions
@@ -211,6 +254,6 @@ public class TestModel : PageModel
 
     private void SaveUserAnswers(List<string> answers)
     {
-        HttpContext.Session.SetString("UserAnswers", JsonSerializer.Serialize(answers));
+        HttpContext.Session.SetString(UserAnswersSessionKey, JsonSerializer.Serialize(answers));
     }
 }

@@ -5,42 +5,61 @@ namespace HomeHubApp.Pages.Naplan.Services;
 
 public class QuestionService : IQuestionService
 {
-    private readonly TestConfig _config = new();
+    private readonly IWebHostEnvironment _environment;
 
     public QuestionService(IWebHostEnvironment environment)
     {
+        _environment = environment;
+    }
+
+    public List<string> GetAllTestFilePaths()
+    {
+        var dir = Path.Combine(_environment.WebRootPath, "data", "naplan");
+
+        if (!Directory.Exists(dir))
+        {
+            Console.WriteLine($"Directory not found: {dir}");
+            return new List<string>();
+        }
+
+        var files = Directory.GetFiles(dir, "test*.json", SearchOption.TopDirectoryOnly)
+                             .Where(f => f.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                             .ToList();
+
+        return files;
+    }
+
+    public TestConfig? LoadConfig(string fullPath)
+    {
+        if (!File.Exists(fullPath))
+        {
+            Console.WriteLine($"File not found: {fullPath}");
+            return null;
+        }
+
         try
         {
-            var filePath = Path.Combine(environment.WebRootPath, "data", "naplan-questions.json");
-
-            if (!File.Exists(filePath))
-            {
-                Console.WriteLine($"Warning: naplan-questions.json not found at {filePath}");
-                return;
-            }
-
-            var json = File.ReadAllText(filePath);
+            var json = File.ReadAllText(fullPath);
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
-            // Try to deserialize as new object format first
             var tempConfig = JsonSerializer.Deserialize<TestConfig>(json, options);
             if (tempConfig?.Questions?.Any() == true)
             {
-                _config = tempConfig;
+                return tempConfig;
             }
-            else
+
+            // Fallback: old array format
+            var questions = JsonSerializer.Deserialize<List<Question>>(json, options) ?? new();
+            return new TestConfig
             {
-                // Fallback: old array format
-                var questions = JsonSerializer.Deserialize<List<Question>>(json, options) ?? new();
-                _config.Questions = questions;
-                _config.TotalTimeSeconds = null;
-            }
+                Questions = questions,
+                TotalTimeSeconds = null
+            };
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading naplan-questions.json: {ex.Message}");
+            Console.WriteLine($"Error loading {fullPath}: {ex.Message}");
+            return null;
         }
     }
-
-    public TestConfig GetTestConfig() => _config;
 }

@@ -1,4 +1,3 @@
-    using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace HomeHubApp.Pages.Naplan
@@ -7,8 +6,8 @@ namespace HomeHubApp.Pages.Naplan
     {
         public void OnGet()
         {
-            HttpContext.Session.Remove("UserAnswers");
-            HttpContext.Session.Remove("TestStartUtcIso");
+            HttpContext.Session.Remove(TestModel.UserAnswersSessionKey);
+            HttpContext.Session.Remove(TestModel.TestStartSessoinKey);
         }
     }
 }

@@ -20,14 +20,23 @@ public class ResultsModel : PageModel
 
     public void OnGet()
     {
-        var testConfig = _service.GetTestConfig();
-        var allQuestions = testConfig.Questions;
-        // Only count real questions
-        var questions = allQuestions
+       // NEW: Retrieve the same test file that was used during the test
+        var testFilePath = HttpContext.Session.GetString(TestModel.TestFileSessionKey);
+
+        TestConfig? config = null;
+        if (!string.IsNullOrEmpty(testFilePath))
+        {
+            config = _service.LoadConfig(testFilePath);
+        }
+
+        var questions = config?.Questions ?? new List<Question>();
+
+        // Optional: filter to real (non-informational) questions only
+        var realQuestions = questions
             .Where(q => !string.IsNullOrEmpty(q.Type) && q.Type != "none")
             .ToList();
 
-        Total = questions.Count;
+        Total = realQuestions.Count;
         if (Total == 0) return;
 
         var json = HttpContext.Session.GetString("UserAnswers");
@@ -39,7 +48,7 @@ public class ResultsModel : PageModel
 
         for (var i = 0; i < Total; i++)
         {
-            var q = questions[i];
+            var q = realQuestions[i];
             var userAns = i < userAnswers.Count ? userAnswers[i] : "";
             bool correct;
 
@@ -47,9 +56,17 @@ public class ResultsModel : PageModel
             {
                 var userList = string.IsNullOrEmpty(userAns)
                     ? new List<string>()
-                    : userAns.Split(',').Select(x => x.Trim()).OrderBy(x => x).ToList();
-                var correctList = q.CorrectAnswers.OrderBy(x => x).ToList();
-                correct = userList.SequenceEqual(correctList);
+                    : userAns.Split(',')
+                             .Select(x => x.Trim())
+                             .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                             .ToList();
+
+                var correctList = q.CorrectAnswers
+                                   .Select(x => x.Trim())
+                                   .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                                   .ToList();
+
+                correct = userList.SequenceEqual(correctList, StringComparer.OrdinalIgnoreCase);
             }
             else // single or text
             {
