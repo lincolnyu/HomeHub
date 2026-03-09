@@ -180,7 +180,6 @@ public class TestModel : PageModel
         // Questions up to this page.
         VisibleQuestionNumber = GetNumberOfQuestionsBeforeThisPage(visibleQuestions, CurrentPageIndex); 
         
-
         // Parent index (flat list position)
         var parent = QuestionPages.FirstOrDefault(q => q.Id == CurrentPage.ParentId);
         ParentIndex = parent != null ? QuestionPages.IndexOf(parent) : null;
