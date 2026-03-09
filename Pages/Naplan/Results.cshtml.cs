@@ -39,7 +39,7 @@ public class ResultsModel : PageModel
         Total = realQuestions.Count;
         if (Total == 0) return;
 
-        var json = HttpContext.Session.GetString("UserAnswers");
+        var json = HttpContext.Session.GetString(TestModel.UserAnswersSessionKey);
         var userAnswers = string.IsNullOrEmpty(json)
             ? new List<string>()
             : JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();

@@ -19,15 +19,15 @@ public class TestModel : PageModel
         _service = service;
     }
 
-    [BindProperty(SupportsGet = true)] public int CurrentIndex { get; set; }
+    [BindProperty(SupportsGet = true)] public int CurrentPageIndex { get; set; }
 
     [BindProperty] public string SelectedAnswer { get; set; } = string.Empty; // single + text
 
     [BindProperty] public List<string> SelectedMulti { get; set; } = new(); // multi
 
-    public List<Question> Questions { get; private set; } = new();
-    public Question CurrentQuestion { get; private set; } = new();
-    public int TotalQuestions { get; private set; }
+    public List<Question> QuestionPages { get; private set; } = new();
+    public Question CurrentPage { get; private set; } = new();
+    public int TotalPages { get; private set; }
 
     public int? TotalTimeSeconds { get; private set; }
     public string? StartTimeUtcIso { get; private set; }
@@ -113,7 +113,7 @@ public class TestModel : PageModel
     {
         LoadTestConfigAndSetCurrent();
         SaveCurrentAnswer();
-        var nextIndex = Math.Min(CurrentIndex + 1, TotalQuestions - 1);
+        var nextIndex = Math.Min(CurrentPageIndex + 1, TotalPages - 1);
         return RedirectToPage(new { index = nextIndex });
     }
 
@@ -121,7 +121,7 @@ public class TestModel : PageModel
     {
         LoadTestConfigAndSetCurrent();
         SaveCurrentAnswer();
-        var prevIndex = Math.Max(CurrentIndex - 1, 0);
+        var prevIndex = Math.Max(CurrentPageIndex - 1, 0);
         return RedirectToPage(new { index = prevIndex });
     }
 
@@ -147,7 +147,7 @@ public class TestModel : PageModel
     }
 
     // ────────────────────────────────────────────────
-    // Core loading logic – always sets CurrentQuestion
+    // Core loading logic – always sets CurrentPage
     // ────────────────────────────────────────────────
     private void LoadTestConfigAndSetCurrent(int? requestedIndex = null)
     {
@@ -159,41 +159,42 @@ public class TestModel : PageModel
             config = _service.LoadConfig(path);
         }
 
-        Questions = config?.Questions ?? new List<Question>();
+        QuestionPages = config?.Questions ?? new List<Question>();
         TotalTimeSeconds = config?.TotalTimeSeconds;
-        TotalQuestions = Questions.Count;
+        TotalPages = QuestionPages.Count;
 
-        int targetIndex = requestedIndex ?? CurrentIndex;
-        CurrentIndex = TotalQuestions == 0 ? 0 : Math.Clamp(targetIndex, 0, TotalQuestions - 1);
+        int targetIndex = requestedIndex ?? CurrentPageIndex;
+        CurrentPageIndex = TotalPages == 0 ? 0 : Math.Clamp(targetIndex, 0, TotalPages - 1);
 
-        CurrentQuestion = TotalQuestions > 0
-            ? Questions[CurrentIndex]
+        CurrentPage = TotalPages > 0
+            ? QuestionPages[CurrentPageIndex]
             : new Question { Content = "No test loaded. Check wwwroot/data/naplan folder." };
 
         // ────────────────────────────────────────────────
         // NEW: Calculate visible (real) questions
         // ────────────────────────────────────────────────
-        var visibleQuestions = Questions
-            .Where(q => !string.IsNullOrEmpty(q.Type) && q.Type != "none")
-            .ToList();
+        var visibleQuestions = GetVisibleQuestions();
 
         VisibleQuestionCount = visibleQuestions.Count;
 
         // Visible number (1-based) – 0 if current is informational
-        VisibleQuestionNumber = visibleQuestions.IndexOf(CurrentQuestion) + 1;
+        VisibleQuestionNumber = visibleQuestions.IndexOf(CurrentPage) + 1;
         if (VisibleQuestionNumber <= 0) VisibleQuestionNumber = 1; // fallback for informational
 
         // Parent index (flat list position)
-        var parent = Questions.FirstOrDefault(q => q.Id == CurrentQuestion.ParentId);
-        ParentIndex = parent != null ? Questions.IndexOf(parent) : null;
+        var parent = QuestionPages.FirstOrDefault(q => q.Id == CurrentPage.ParentId);
+        ParentIndex = parent != null ? QuestionPages.IndexOf(parent) : null;
     }
 
     private void PopulateSelectedAnswersFromSession()
     {
         var answers = GetOrInitUserAnswers();
-        var userAns = CurrentIndex < answers.Count ? answers[CurrentIndex] : "";
+        var visibleIndex = GetVisibleIndexForCurrentPage();
+        var userAns = visibleIndex >= 0 && visibleIndex < answers.Count
+            ? answers[visibleIndex]
+            : "";
 
-        if (CurrentQuestion.Type == "multi")
+        if (CurrentPage.Type == "multi")
         {
             SelectedMulti = string.IsNullOrWhiteSpace(userAns)
                 ? new List<string>()
@@ -231,13 +232,16 @@ public class TestModel : PageModel
     private void SaveCurrentAnswer()
     {
         // Skip if informational (no answer needed/saved)
-        if (string.IsNullOrEmpty(CurrentQuestion.Type) || CurrentQuestion.Type == "none")
+        if (string.IsNullOrEmpty(CurrentPage.Type) || CurrentPage.Type == "none")
             return;
 
-        var answers = GetOrInitUserAnswers();
-        if (CurrentIndex >= answers.Count) return;
+        var visibleIndex = GetVisibleIndexForCurrentPage();
+        if (visibleIndex < 0) return; // safety
 
-        var toSave = CurrentQuestion.Type switch
+        var answers = GetOrInitUserAnswers();
+        if (visibleIndex >= answers.Count) return;
+
+        var toSave = CurrentPage.Type switch
         {
             "multi" => string.Join(",",
                 SelectedMulti
@@ -248,8 +252,26 @@ public class TestModel : PageModel
             _ => SelectedAnswer?.Trim() ?? ""
         };
 
-        answers[CurrentIndex] = toSave;
+        answers[visibleIndex] = toSave;
         SaveUserAnswers(answers);
+    }
+
+    private int GetVisibleIndexForCurrentPage()
+    {
+        if (string.IsNullOrEmpty(CurrentPage.Type) || CurrentPage.Type == "none")
+            return -1; // informational → no answer slot
+
+        var visibleQuestions = GetVisibleQuestions();
+
+        int visibleIndex = visibleQuestions.IndexOf(CurrentPage);
+        return visibleIndex >= 0 ? visibleIndex : -1;
+    }
+
+    private List<Question> GetVisibleQuestions()
+    {
+        return QuestionPages
+            .Where(q => !string.IsNullOrEmpty(q.Type) && q.Type != "none")
+            .ToList();
     }
 
     private void SaveUserAnswers(List<string> answers)
