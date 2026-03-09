@@ -10,6 +10,14 @@
         <h1 class="display-4">🎉 Well Done! 🎉</h1>
         <div class="display-1 fw-bold text-success">@Model.Score / @Model.Total</div>
         <div class="fs-2 text-muted">@percentage% correct</div>
+        <!-- Time used display -->
+        <div class="fs-4 mt-3 text-info">
+            Time used: <strong>@Model.TimeUsedDisplay</strong>
+            @if (!string.IsNullOrEmpty(Model.TimeAllowedDisplay))
+            {
+                <span> (out of @Model.TimeAllowedDisplay allowed)</span>
+            }
+        </div>
     </div>
 
     <div class="row">
