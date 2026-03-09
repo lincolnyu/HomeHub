@@ -66,7 +66,7 @@ public class TestModel : PageModel
             }
             else
             {
-                Console.WriteLine("[NAPLAN] No test files found in wwwroot/data/naplan");
+                Console.WriteLine("[NAPLAN] No test files found on server");
             }
         }
 
@@ -166,9 +166,10 @@ public class TestModel : PageModel
         int targetIndex = requestedIndex ?? CurrentPageIndex;
         CurrentPageIndex = TotalPages == 0 ? 0 : Math.Clamp(targetIndex, 0, TotalPages - 1);
 
+        // Check server /wwwroot/data/naplan
         CurrentPage = TotalPages > 0
             ? QuestionPages[CurrentPageIndex]
-            : new Question { Content = "No test loaded. Check wwwroot/data/naplan folder." };
+            : new Question { Content = "No test loaded. Report it to admin." };
 
         // ────────────────────────────────────────────────
         // NEW: Calculate visible (real) questions
