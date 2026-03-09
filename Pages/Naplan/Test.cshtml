@@ -59,7 +59,7 @@
                     @Model.CurrentPage.Title
                 </div>
                 <div class="card-body p-5">
-                    <p class="fs-3 fw-normal mb-4">@Model.CurrentPage.Content</p>
+                    <p class="fs-3 fw-normal mb-4" style="white-space: pre-wrap;">@Model.CurrentPage.Content</p>
 
                     @if (!string.IsNullOrEmpty(Model.CurrentPage.ImageUrl))
                     {
