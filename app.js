@@ -13,6 +13,20 @@ const DEFAULT_SPHERE = {
   subspaces: "x < 0\ny < 0",
   bounds: { minX: -5, maxX: 5, minY: -5, maxY: 5, minZ: -5, maxZ: 5 },
 };
+const SUBSPACE_PALETTE = [
+  "#00d1ff",
+  "#ff4f8b",
+  "#ffe45e",
+  "#3df277",
+  "#b56cff",
+  "#ff8a2a",
+  "#00e0c6",
+  "#f04444",
+  "#8ad8ff",
+  "#d6ff4f",
+  "#ff73e1",
+  "#7f9cff",
+];
 
 const els = {
   canvas: document.querySelector("#projection"),
@@ -191,7 +205,7 @@ function generateParticles() {
     if (!overlaps) {
       const id = particles.length;
       const speedCap = config.subspaceSettings[subspace].speedCap;
-      particles.push({ id, subspace, position, velocity: randomVelocity(speedCap), color: colorFor(id) });
+      particles.push({ id, subspace, position, velocity: randomVelocity(speedCap), color: colorForSubspace(subspace) });
       accepted[subspace] += 1;
     }
   }
@@ -217,9 +231,10 @@ function cloneParticles(particles) {
   }));
 }
 
-function colorFor(i) {
-  const hue = (i * 137.508) % 360;
-  return `hsl(${hue} 72% 62%)`;
+function colorForSubspace(index) {
+  if (index < SUBSPACE_PALETTE.length) return SUBSPACE_PALETTE[index];
+  const hue = (index * 137.508) % 360;
+  return `hsl(${hue} 92% 62%)`;
 }
 
 function distance(a, b) {
@@ -589,6 +604,7 @@ function syncSubspaceSettingsPanel() {
     const rule = subspaceRules[index] || "remaining space";
     row.innerHTML = `
       <div class="subspace-name">
+        <span class="subspace-swatch" style="background:${colorForSubspace(index)}"></span>
         Subspace ${index + 1}
         <span class="subspace-rule">${rule}</span>
       </div>
