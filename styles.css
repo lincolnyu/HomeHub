@@ -209,6 +209,7 @@ button.primary,
 }
 
 .bar-track {
+  display: block;
   height: 10px;
   background: #101314;
   border: 1px solid #252b2d;
@@ -217,6 +218,7 @@ button.primary,
 }
 
 .bar-fill {
+  display: block;
   height: 100%;
   width: 0%;
   background: var(--accent-2);
