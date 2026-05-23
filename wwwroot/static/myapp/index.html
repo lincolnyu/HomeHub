@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Particle Statistics Demonstration</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <section class="simulation">
+      <div class="canvas-wrap">
+        <canvas id="projection" width="900" height="900" aria-label="Particle projection on z=0 plane"></canvas>
+      </div>
+      <div class="status-bar">
+        <span id="timeReadout">t = 0.000 s</span>
+        <span id="collisionReadout">collisions = 0</span>
+        <span id="particleReadout">particles = 0</span>
+      </div>
+    </section>
+
+    <aside class="controls">
+      <section class="panel">
+        <h1>Particle Statistics</h1>
+        <div class="button-row">
+          <button id="loadSphere" type="button">Sphere</button>
+          <button id="loadBox" type="button">Box</button>
+          <button id="randomize" type="button">Randomize</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Space</h2>
+        <label>
+          Boundary inequalities
+          <textarea id="spaceInput" spellcheck="false"></textarea>
+        </label>
+        <label>
+          Subspace inequalities, one per line
+          <textarea id="subspaceInput" spellcheck="false"></textarea>
+        </label>
+      </section>
+
+      <section class="panel grid">
+        <label>
+          Radius
+          <input id="particleRadius" type="number" min="0.05" max="1" step="0.05">
+        </label>
+        <label>
+          Collision threshold
+          <input id="collisionThreshold" type="number" min="0.0001" max="0.25" step="0.001">
+        </label>
+        <label>
+          Histogram bins
+          <input id="histogramBins" type="number" min="2" max="30" step="1">
+        </label>
+        <label>
+          Playback
+          <input id="playbackSpeed" type="number" min="0.1" max="20" step="0.1">
+        </label>
+      </section>
+
+      <section class="panel">
+        <h2>Subspace Settings</h2>
+        <div id="subspaceSettings" class="subspace-settings"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Playback</h2>
+        <div class="button-row">
+          <button id="playPause" type="button">Play</button>
+          <button id="stepOne" type="button">Step 1</button>
+          <button id="stepMany" type="button">Step 10</button>
+          <button id="reset" type="button">Reset</button>
+        </div>
+        <p id="message" class="message"></p>
+      </section>
+
+      <section class="panel histograms">
+        <h2>Speed Distribution</h2>
+        <div id="histograms"></div>
+      </section>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
