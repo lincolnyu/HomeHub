@@ -21,12 +21,11 @@ const els = {
   particleReadout: document.querySelector("#particleReadout"),
   spaceInput: document.querySelector("#spaceInput"),
   subspaceInput: document.querySelector("#subspaceInput"),
-  particleCount: document.querySelector("#particleCount"),
   particleRadius: document.querySelector("#particleRadius"),
   collisionThreshold: document.querySelector("#collisionThreshold"),
-  speedCap: document.querySelector("#speedCap"),
   histogramBins: document.querySelector("#histogramBins"),
   playbackSpeed: document.querySelector("#playbackSpeed"),
+  subspaceSettings: document.querySelector("#subspaceSettings"),
   loadSphere: document.querySelector("#loadSphere"),
   loadBox: document.querySelector("#loadBox"),
   randomize: document.querySelector("#randomize"),
@@ -45,6 +44,7 @@ let config;
 let compiled = {};
 let playing = false;
 let lastFrame = performance.now();
+let subspaceSettingsState = [];
 
 function expressionToFunction(source) {
   const normalized = source
@@ -87,17 +87,39 @@ function readConfig() {
     .map((line) => line.trim())
     .filter(Boolean);
   const radius = Number(els.particleRadius.value);
+  ensureSubspaceSettings(subspaceRules.length + 1);
   return {
     spaceSource: els.spaceInput.value.trim(),
     subspaceSources: subspaceRules,
-    particleCount: Number(els.particleCount.value),
     particleRadius: radius,
     threshold: Number(els.collisionThreshold.value),
-    speedCap: Number(els.speedCap.value),
     histogramBins: Number(els.histogramBins.value),
     playbackSpeed: Number(els.playbackSpeed.value),
+    subspaceSettings: readSubspaceSettings(subspaceRules.length + 1),
     bounds: inferBounds(els.spaceInput.value.trim()),
   };
+}
+
+function ensureSubspaceSettings(count) {
+  while (subspaceSettingsState.length < count) {
+    subspaceSettingsState.push({ particles: 12, speedCap: 4 });
+  }
+  if (subspaceSettingsState.length > count) {
+    subspaceSettingsState = subspaceSettingsState.slice(0, count);
+  }
+}
+
+function readSubspaceSettings(count) {
+  const rows = [...els.subspaceSettings.querySelectorAll(".subspace-row")];
+  if (rows.length === count) {
+    subspaceSettingsState = rows.map((row, index) => ({
+      particles: Math.max(0, Number(row.querySelector("[data-field='particles']").value) || 0),
+      speedCap: Math.max(0.1, Number(row.querySelector("[data-field='speedCap']").value) || subspaceSettingsState[index]?.speedCap || 4),
+    }));
+  } else {
+    ensureSubspaceSettings(count);
+  }
+  return subspaceSettingsState.map((setting) => ({ ...setting }));
 }
 
 function inferBounds(source) {
@@ -140,8 +162,8 @@ function randomBetween(min, max) {
   return min + Math.random() * (max - min);
 }
 
-function randomVelocity() {
-  const speed = randomBetween(config.speedCap * 0.25, config.speedCap);
+function randomVelocity(speedCap) {
+  const speed = randomBetween(speedCap * 0.25, speedCap);
   const theta = Math.random() * TAU;
   const u = randomBetween(-1, 1);
   const planar = Math.sqrt(1 - u * u);
@@ -155,17 +177,31 @@ function randomVelocity() {
 function generateParticles() {
   compileAll();
   const particles = [];
-  for (let i = 0; i < config.particleCount; i += 1) {
-    let placed = false;
-    for (let attempts = 0; attempts < 3000 && !placed; attempts += 1) {
-      const position = randomInSpace();
-      const overlaps = particles.some((p) => distance(p.position, position) < config.particleRadius * 2.15);
-      if (!overlaps) {
-        particles.push({ id: i, position, velocity: randomVelocity(), color: colorFor(i) });
-        placed = true;
-      }
+  const targets = config.subspaceSettings.map((setting) => setting.particles);
+  const accepted = Array(targets.length).fill(0);
+  const totalTarget = targets.reduce((sum, value) => sum + value, 0);
+  let attempts = 0;
+  const maxAttempts = Math.max(20000, totalTarget * 5000);
+  while (particles.length < totalTarget && attempts < maxAttempts) {
+    attempts += 1;
+    const position = randomInSpace();
+    const subspace = classifyPoint(position);
+    if (accepted[subspace] >= targets[subspace]) continue;
+    const overlaps = particles.some((p) => distance(p.position, position) < config.particleRadius * 2.15);
+    if (!overlaps) {
+      const id = particles.length;
+      const speedCap = config.subspaceSettings[subspace].speedCap;
+      particles.push({ id, subspace, position, velocity: randomVelocity(speedCap), color: colorFor(id) });
+      accepted[subspace] += 1;
     }
-    if (!placed) throw new Error("The requested particles do not fit comfortably in this space.");
+  }
+  if (particles.length < totalTarget) {
+    const missing = targets
+      .map((target, index) => target - accepted[index])
+      .map((count, index) => count > 0 ? `Subspace ${index + 1}: ${count}` : "")
+      .filter(Boolean)
+      .join(", ");
+    throw new Error(`Could not place all requested particles. Remaining: ${missing}.`);
   }
   initialParticles = cloneParticles(particles);
   state = { particles, time: 0, collisions: 0 };
@@ -174,6 +210,7 @@ function generateParticles() {
 function cloneParticles(particles) {
   return particles.map((p) => ({
     id: p.id,
+    subspace: p.subspace,
     color: p.color,
     position: { ...p.position },
     velocity: { ...p.velocity },
@@ -390,12 +427,16 @@ function simulateContinuous(dt) {
   }
 }
 
-function classifySubspace(particle) {
-  const { x, y, z } = particle.position;
+function classifyPoint(point) {
+  const { x, y, z } = point;
   for (let i = 0; i < compiled.subspaces.length; i += 1) {
     if (compiled.subspaces[i](x, y, z)) return i;
   }
   return compiled.subspaces.length;
+}
+
+function classifySubspace(particle) {
+  return classifyPoint(particle.position);
 }
 
 function speed(particle) {
@@ -469,9 +510,10 @@ function drawHistograms() {
   const subspaceCount = compiled.subspaces.length + 1;
   const bins = Array.from({ length: subspaceCount }, () => Array(config.histogramBins).fill(0));
   const totals = Array(subspaceCount).fill(0);
+  const histogramMax = getGlobalHistogramMax();
   for (const p of state.particles) {
     const group = classifySubspace(p);
-    const index = Math.min(config.histogramBins - 1, Math.floor(speed(p) / config.speedCap * config.histogramBins));
+    const index = Math.min(config.histogramBins - 1, Math.floor(speed(p) / histogramMax * config.histogramBins));
     bins[group][Math.max(0, index)] += 1;
     totals[group] += 1;
   }
@@ -486,8 +528,8 @@ function drawHistograms() {
     const bars = document.createElement("div");
     bars.className = "bars";
     counts.forEach((count, i) => {
-      const lo = (i * config.speedCap / config.histogramBins).toFixed(2);
-      const hi = ((i + 1) * config.speedCap / config.histogramBins).toFixed(2);
+      const lo = (i * histogramMax / config.histogramBins).toFixed(2);
+      const hi = ((i + 1) * histogramMax / config.histogramBins).toFixed(2);
       const row = document.createElement("div");
       row.className = "bar-row";
       row.innerHTML = `<span>${lo}-${hi}</span><span class="bar-track"><span class="bar-fill" style="width:${count / maxCount * 100}%"></span></span><span>${count}</span>`;
@@ -496,6 +538,12 @@ function drawHistograms() {
     wrapper.append(title, bars);
     els.histograms.appendChild(wrapper);
   });
+}
+
+function getGlobalHistogramMax() {
+  const currentMax = state.particles.reduce((max, particle) => Math.max(max, speed(particle)), 0);
+  const configuredMax = config.subspaceSettings.reduce((max, setting) => Math.max(max, setting.speedCap), 0);
+  return Math.max(0.1, currentMax, configuredMax);
 }
 
 function resetToInitial() {
@@ -508,6 +556,7 @@ function loadPreset(preset) {
   els.spaceInput.value = preset.space;
   els.subspaceInput.value = preset.subspaces;
   Object.assign(config || {}, { bounds: preset.bounds });
+  syncSubspaceSettingsPanel();
   randomize();
 }
 
@@ -524,6 +573,36 @@ function randomize() {
 function setMessage(text, error = false) {
   els.message.textContent = text;
   els.message.classList.toggle("error", error);
+}
+
+function syncSubspaceSettingsPanel() {
+  const subspaceRules = els.subspaceInput.value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  readSubspaceSettings(subspaceRules.length + 1);
+  ensureSubspaceSettings(subspaceRules.length + 1);
+  els.subspaceSettings.innerHTML = "";
+  subspaceSettingsState.forEach((setting, index) => {
+    const row = document.createElement("div");
+    row.className = "subspace-row";
+    const rule = subspaceRules[index] || "remaining space";
+    row.innerHTML = `
+      <div class="subspace-name">
+        Subspace ${index + 1}
+        <span class="subspace-rule">${rule}</span>
+      </div>
+      <label>
+        Particles
+        <input data-field="particles" data-index="${index}" type="number" min="0" max="200" step="1" value="${setting.particles}">
+      </label>
+      <label>
+        Initial speed cap
+        <input data-field="speedCap" data-index="${index}" type="number" min="0.1" max="20" step="0.1" value="${setting.speedCap}">
+      </label>
+    `;
+    els.subspaceSettings.appendChild(row);
+  });
 }
 
 function tick(now) {
@@ -551,12 +630,16 @@ function updatePlayButton() {
 function initInputs() {
   els.spaceInput.value = DEFAULT_SPHERE.space;
   els.subspaceInput.value = DEFAULT_SPHERE.subspaces;
-  els.particleCount.value = 36;
   els.particleRadius.value = 0.18;
   els.collisionThreshold.value = 0.01;
-  els.speedCap.value = 4;
   els.histogramBins.value = 10;
   els.playbackSpeed.value = 1;
+  subspaceSettingsState = [
+    { particles: 12, speedCap: 4 },
+    { particles: 12, speedCap: 4 },
+    { particles: 12, speedCap: 4 },
+  ];
+  syncSubspaceSettingsPanel();
 }
 
 els.loadSphere.addEventListener("click", () => loadPreset(DEFAULT_SPHERE));
@@ -571,7 +654,28 @@ els.playPause.addEventListener("click", () => {
   updatePlayButton();
 });
 
-for (const input of [els.spaceInput, els.subspaceInput, els.histogramBins, els.speedCap]) {
+els.subspaceInput.addEventListener("change", () => {
+  try {
+    syncSubspaceSettingsPanel();
+    compileAll();
+    render();
+    setMessage("");
+  } catch (error) {
+    setMessage(error.message, true);
+  }
+});
+
+els.subspaceSettings.addEventListener("change", () => {
+  try {
+    compileAll();
+    render();
+    setMessage("");
+  } catch (error) {
+    setMessage(error.message, true);
+  }
+});
+
+for (const input of [els.spaceInput, els.histogramBins, els.particleRadius, els.collisionThreshold, els.playbackSpeed]) {
   input.addEventListener("change", () => {
     try {
       compileAll();
